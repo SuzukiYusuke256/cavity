@@ -288,18 +288,75 @@ void write(double* u, double* v, double* p, double* du, double* dv, double* dp, 
     fclose(dPres);
 }
 
+// 残差などのログを出力する．
+void writeLog(char* fileName, int timeStep, double dt, double* res, int resNum)
+{
+    // ログファイルを開く
+    FILE* outputLog = fopen(fileName,"a");
+
+    // ファイルが正しく開けたかを確認
+    if (outputLog == NULL) {
+        printf("Failed to open file\n");
+        return; 
+    }
+
+    // 残差を書き込み
+    // timeStep, time を書き込み
+    fprintf(outputLog,"%d %.4lf",timeStep, timeStep*dt);
+
+    // 残差を書き込み
+    for (int i=0; i<resNum; i++)
+    {
+        fprintf(outputLog," %.4e",res[i]);
+    }
+    // 改行文字を書き込み
+    fprintf(outputLog,"\n");
+
+    // ファイルを閉じる
+    fclose(outputLog);
+}
+
+// 残差を計算
+// field        残差を計算する場(速度，圧力など)
+// numX, numY   計算に使う領域の格子点数．基本はゴーストセルを除いた値を入れる．
+// startIndex   残差をまとめて配列resに入れる．各フィールドがどの番号から始まるのか指定．Uは0,1, Vは2,3,... など．
+void calcResidual(double* field, int numX, int numY, double* res, int startIndex)
+{
+    double tmpErr = 0;
+    for(int i=1; i<numY+1; i++)
+    {
+        for(int j=1; j<numX+1; j++)
+        {   
+            tmpErr += fabs(field[j+i*(numX+2)]);
+            // tmpErr += du[j+i*(numX+2)]*du[j+i*(numX+2)];
+        }
+    }
+    
+    // 残差を格納
+    res[startIndex+0] = tmpErr;
+    res[startIndex+1] = tmpErr/(numX*numY);
+}
+
 int main()
 {
-    int xn = 129;
-    int yn = 129;
-    // int xn = 30;
-    // int yn = 30;
+    // 計算設定
+    int stepNum = 1000;
+    int outputInterval = 10;
+
+    double dt = 0.001;
+
+    int xn = 128;
+    int yn = 128;
+
+    // 流体の物性値
+    double Re = 100;
+
+    // output file name
+    char* logFileName = "log";
 
     double dx = 1.0 / (double)xn;
     double dy = 1.0 / (double)yn;
-    double dt = 0.001;
-
-    // double u[(xn+3)*(yn+2)] = {0,};
+    
     double* u = (double*)calloc((xn+3)*(yn+2),sizeof(double));
     double* v = (double*)calloc((xn+2)*(yn+3),sizeof(double));
     double* p = (double*)calloc((xn+2)*(yn+2),sizeof(double));
@@ -307,15 +364,15 @@ int main()
     double* dv = (double*)calloc((xn+2)*(yn+3),sizeof(double));
     double* dp = (double*)calloc((xn+2)*(yn+2),sizeof(double));
 
-    // 流体の物性値
-    double Re = 100;
+
+    double res[6] = {0}; // 配列を0で初期化
 
     // 境界条件
     // y = yn+2 u 速度一定の壁面
     // y = 1, x=1,xn+2 速度0
     // x = 0,xn+3 y = 0,y+3 連続の式を満たすように設定
 
-    // 内部場を初期化
+    // initial conditions
     // U
     for(int i=1; i<yn+1; i++)
     {
@@ -334,16 +391,27 @@ int main()
     }
 
     // boundary conditions
-
-
     double time = 0;
     char timeDirName[100] = {0,};
-    int stepNum = 30000;
-    int outputInterval = 1000;
 
     double err = 0;
     double errPerCell = 0;
 
+    // ログファイルのヘッダを書き込み
+    FILE* outputLog = fopen(logFileName,"w");
+
+    // ファイルが正しく開けたかを確認
+    if (outputLog == NULL) {
+        printf("Failed to open file\n");
+        return 0;
+    }
+    else
+    {
+        fprintf(outputLog,"TimeStep Time URes URes(cell) VRes VRes(cell) pRes pRes(cell)\n"); // ヘッダを書き込み
+        fclose(outputLog); // ファイルを閉じる
+    }
+
+    // SMAC法での計算
     for(int k=0; k<=stepNum; k++)
     {
         // 境界条件の設定
@@ -357,34 +425,25 @@ int main()
         // 圧力修正子を計算
         poissonPressure(u,v,p,du,dv,dp,Re,dx,dy,dt,xn,yn);
 
+        // printf("called\n");
+
         // 速度，圧力の修正
         correct(u,v,p,du,dv,dp,dx,dy,dt,xn,yn);
+
+        // printf("called\n");
+
+        // write(u,v,p,du,dv,dp,xn,yn,timeDirName);
 
         // 残差を出力
         if (k % outputInterval == 0)
         {
-            err = 0;
-            // U
-            for(int i=1; i<yn+1; i++)
-            {
-                for(int j=1; j<xn+2; j++)
-                {
-                    err += du[j+i*(xn+3)]*du[j+i*(xn+3)];
-                }
-            }
-            // V
-            // for(int i=1; i<yn+2; i++)
-            // {
-            //     for(int j=1; j<xn+1; j++)
-            //     {
-            //         err += dv[j+i*(xn+2)]*dv[j+i*(xn+2)];
-            //     }
-            // }
-            errPerCell = err / ((xn+3)*(yn+2));
-            printf("%d %.4e %.4e\n",k,err,errPerCell);
+            // 残差の計算
+            calcResidual(du,xn+1,yn,res,0);
+            calcResidual(dv,xn,yn+1,res,2);
+            calcResidual(dp,xn,yn,res,4);
 
-            //出力
-            // write(u,v,p,du,dv,dp,xn,yn,timeDirName);
+            // ログに残差を出力
+            writeLog("log",k,dt,res,6);
         }
 
         time = time + dt;
