@@ -5,7 +5,7 @@
 #include <math.h>
 
 // 境界条件に合わせてセルの値を更新
-void correctBC(double* u, double* v, double* p, int xn, int yn)
+void correctBoundaryConditions(double* u, double* v, double* p, int xn, int yn)
 {
     // 上下面
     double uWall = 1.0;
@@ -60,7 +60,7 @@ void correctBC(double* u, double* v, double* p, int xn, int yn)
     }
 }
 
-void updateVelocity(double* u, double* v, double* p, double* du, double* dv, double* dp, double Re, double dx, double dy, double dt, int xn, int yn)
+void predictVelocity(double* u, double* v, double* p, double* du, double* dv, double* dp, double Re, double dx, double dy, double dt, int xn, int yn)
 {
     // NS方程式で仮速度を計算する
     double ududx = 0;
@@ -132,7 +132,7 @@ void updateVelocity(double* u, double* v, double* p, double* du, double* dv, dou
 
 }
 
-void poisson(double* u, double* v, double* p, double* du, double* dv, double* dp, double Re, double dx, double dy, double dt, int xn, int yn)
+void poissonPressure(double* u, double* v, double* p, double* du, double* dv, double* dp, double Re, double dx, double dy, double dt, int xn, int yn)
 {
 
     // 圧力修正量の計算
@@ -223,6 +223,7 @@ void correct(double* u, double* v, double* p, double* du, double* dv, double* dp
     }
 }
 
+// データを書き込む
 void write(double* u, double* v, double* p, double* du, double* dv, double* dp, int xn, int yn, char* timeDirName)
 {
     // 出力
@@ -332,6 +333,9 @@ int main()
         }
     }
 
+    // boundary conditions
+
+
     double time = 0;
     char timeDirName[100] = {0,};
     int stepNum = 30000;
@@ -343,14 +347,15 @@ int main()
     for(int k=0; k<=stepNum; k++)
     {
         // 境界条件の設定
-        correctBC(u,v,p,xn,yn);
+        correctBoundaryConditions(u,v,p,xn,yn);
 
         // 仮速度の計算
         // u,vに仮速度u*,v*が入る
-        updateVelocity(u,v,p,du,dv,dp,Re,dx,dy,dt,xn,yn);
+        predictVelocity(u,v,p,du,dv,dp,Re,dx,dy,dt,xn,yn);
 
         // 圧力ポアソン方程式を解く
-        poisson(u,v,p,du,dv,dp,Re,dx,dy,dt,xn,yn);
+        // 圧力修正子を計算
+        poissonPressure(u,v,p,du,dv,dp,Re,dx,dy,dt,xn,yn);
 
         // 速度，圧力の修正
         correct(u,v,p,du,dv,dp,dx,dy,dt,xn,yn);
@@ -394,7 +399,7 @@ int main()
     // //出力
     write(u,v,p,du,dv,dp,xn,yn,timeDirName);
 
-    // メモリの解法
+    // メモリの解放
     free(u);
     free(v);
     free(p);
