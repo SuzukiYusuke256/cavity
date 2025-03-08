@@ -397,7 +397,7 @@ int main()
 
     // boundary conditions
     double time = 0;
-    char timeDirName[100] = {0,};
+    char timeDirName[100] = {0,}; // 使っていない
 
     // ログファイルのヘッダを書き込み
     FILE* outputLog = fopen(logFileName,"w");
