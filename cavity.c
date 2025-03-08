@@ -224,15 +224,17 @@ void correct(double* u, double* v, double* p, double* du, double* dv, double* dp
 }
 
 // データを書き込む
-void write(double* u, double* v, double* p, double* du, double* dv, double* dp, int xn, int yn, char* timeDirName)
+void write(double* u, double* v, double* p, double* du, double* dv, double* dp, int xn, int yn, char* dataDirName)
 {
+
     // 出力
-    FILE* Ures = fopen("U","w");
-    FILE* Vres = fopen("V","w");
-    FILE* Pres = fopen("p","w");
-    FILE* dUres = fopen("dU","w");
-    FILE* dVres = fopen("dV","w");
-    FILE* dPres = fopen("dp","w");
+    FILE* Ures = fopen("data/U","w");
+    FILE* Vres = fopen("data/V","w");
+    FILE* Pres = fopen("data/p","w");
+    FILE* dUres = fopen("data/dU","w");
+    FILE* dVres = fopen("data/dV","w");
+    FILE* dPres = fopen("data/dp","w");
+
 
     // ファイルが正しく開けたかを確認
     if (Ures == NULL) {
@@ -247,11 +249,15 @@ void write(double* u, double* v, double* p, double* du, double* dv, double* dp, 
         for(int j=0; j<xn+3; j++)
         {
             fprintf(Ures,"%.4lf ",u[j+i*(xn+3)]);
-            fprintf(dUres,"%.4lf ",du[j+i*(xn+3)]);
+            // fprintf(dUres,"%.4lf ",du[j+i*(xn+3)]);
         }
         fprintf(Ures, "\n");
-        fprintf(dUres, "\n");
+        // fprintf(dUres, "\n");
     }
+
+    fclose(Ures);
+    return;
+
     // V
     for(int i=0; i<yn+3; i++)
     {
@@ -340,7 +346,7 @@ void calcResidual(double* field, int numX, int numY, double* res, int startIndex
 int main()
 {
     // 計算設定
-    int stepNum = 1000;
+    int stepNum = 1;
     int outputInterval = 10;
 
     double dt = 0.001;
@@ -352,7 +358,7 @@ int main()
     double Re = 100;
 
     // output file name
-    char* logFileName = "log";
+    char* logFileName = "data/log";
 
     double dx = 1.0 / (double)xn;
     double dy = 1.0 / (double)yn;
@@ -364,8 +370,7 @@ int main()
     double* dv = (double*)calloc((xn+2)*(yn+3),sizeof(double));
     double* dp = (double*)calloc((xn+2)*(yn+2),sizeof(double));
 
-
-    double res[6] = {0}; // 配列を0で初期化
+    double residuals[6] = {0}; // ログに残差を出力するための配列．0で初期化
 
     // 境界条件
     // y = yn+2 u 速度一定の壁面
@@ -393,9 +398,6 @@ int main()
     // boundary conditions
     double time = 0;
     char timeDirName[100] = {0,};
-
-    double err = 0;
-    double errPerCell = 0;
 
     // ログファイルのヘッダを書き込み
     FILE* outputLog = fopen(logFileName,"w");
@@ -438,24 +440,25 @@ int main()
         if (k % outputInterval == 0)
         {
             // 残差の計算
-            calcResidual(du,xn+1,yn,res,0);
-            calcResidual(dv,xn,yn+1,res,2);
-            calcResidual(dp,xn,yn,res,4);
+            calcResidual(du,xn+1,yn,residuals,0);
+            calcResidual(dv,xn,yn+1,residuals,2);
+            calcResidual(dp,xn,yn,residuals,4);
 
             // ログに残差を出力
-            writeLog("log",k,dt,res,6);
+            writeLog(logFileName,k,dt,residuals,6);
         }
 
         time = time + dt;
 
-
-        // printf("%lf\n", time);
     }
     
-    strcpy(timeDirName,"hogehoge");
+    strcpy(timeDirName,"data");
     // printf("%s\n",timeDirName);
 
     // //出力
+    // write(u,v,p,du,dv,dp,xn,yn,);
+
+    // 関数の引数には char* をいれないとだめ？  
     write(u,v,p,du,dv,dp,xn,yn,timeDirName);
 
     // メモリの解放
