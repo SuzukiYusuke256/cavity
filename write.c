@@ -2,7 +2,7 @@
 #include <stdarg.h> 
 #include <stdlib.h>
 
-int write(char* filename, int dataNum, int num, char** headings, ...);
+int writeData(char* filename, int dataNum, int num, char** headings, ...);
 
 int main()
 {
@@ -31,7 +31,7 @@ int main()
 
     // write data
     // write(filename, 3, num, dataNameArray, data1, data2, data3);
-    write(filename, dataNum, num, dataNameArray, data1, data2, data3);
+    writeData(filename, dataNum, num, dataNameArray, data1, data2, data3);
 
     // free memory
     for(int i=0; i<dataNum; i++)
@@ -43,7 +43,7 @@ int main()
 
 // write data
 // data must be array of double
-int write(char* filename, int dataNum, int num, char** headings, ...)
+int writeData(char* filename, int dataNum, int num, char** headings, ...)
 {
     // open file
     FILE *file = fopen(filename, "w");

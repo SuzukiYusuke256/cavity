@@ -10,16 +10,22 @@ CFLAGS = -O2
 # 実行ファイル名
 TARGET = cavity
 
+# ソースファイル
+SRCS = cavity.c myIO.c
+
+# オブジェクトファイル
+OBJS = $(SRCS:.c=.o)
+
 # デフォルトのターゲット
 all: $(TARGET)
 
-# cavity.cをコンパイルして実行ファイルを生成
-$(TARGET): cavity.o
-	$(CC) $(CFLAGS) -o $(TARGET) cavity.o
+# 実行ファイルの生成ルール
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
 
-# cavity.cをコンパイルしてオブジェクトファイルを生成
-cavity.o: cavity.c
-	$(CC) $(CFLAGS) -c cavity.c
+# オブジェクトファイルの生成ルール
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 # クリーンアップ（オブジェクトファイルと実行ファイルを削除）
 clean:

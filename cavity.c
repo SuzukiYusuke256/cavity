@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
+
+#include "myIO.h"
 
 // 境界条件に合わせてセルの値を更新
 void correctBoundaryConditions(double* u, double* v, double* p, int xn, int yn)
@@ -224,7 +227,7 @@ void correct(double* u, double* v, double* p, double* du, double* dv, double* dp
 }
 
 // データを書き込む
-void write(double* u, double* v, double* p, double* du, double* dv, double* dp, int xn, int yn, char* dataDirName)
+void writeAll(int timeStep, double* u, double* v, double* p, double* du, double* dv, double* dp, int xn, int yn, char* dataDirName)
 {
 
     // 出力
@@ -235,7 +238,6 @@ void write(double* u, double* v, double* p, double* du, double* dv, double* dp, 
     FILE* dVres = fopen("data/dV","w");
     FILE* dPres = fopen("data/dp","w");
 
-
     // ファイルが正しく開けたかを確認
     if (Ures == NULL) {
         printf("ファイルを開くことができません。\n");
@@ -244,40 +246,43 @@ void write(double* u, double* v, double* p, double* du, double* dv, double* dp, 
 
     // ファイルに文字列を書き込む
     // U
+    fprintf(Ures,"TimeStep=%d\n",timeStep);
+    fprintf(dUres,"TimeStep=%d\n",timeStep);
     for(int i=0; i<yn+2; i++)
     {
         for(int j=0; j<xn+3; j++)
         {
-            fprintf(Ures,"%.4lf ",u[j+i*(xn+3)]);
-            // fprintf(dUres,"%.4lf ",du[j+i*(xn+3)]);
+            fprintf(Ures,"%.8e ",u[j+i*(xn+3)]);
+            fprintf(dUres,"%.8e ",du[j+i*(xn+3)]);
         }
         fprintf(Ures, "\n");
-        // fprintf(dUres, "\n");
+        fprintf(dUres, "\n");
     }
 
-    fclose(Ures);
-    return;
-
     // V
+    fprintf(Vres,"TimeStep=%d\n",timeStep);
+    fprintf(dVres,"TimeStep=%d\n",timeStep);
     for(int i=0; i<yn+3; i++)
     {
         for(int j=0; j<xn+2; j++)
         {
-            fprintf(Vres,"%.4lf ",v[j+i*(xn+2)]);
-            fprintf(dVres,"%.4lf ",dv[j+i*(xn+2)]);
+            fprintf(Vres,"%.8e ",v[j+i*(xn+2)]);
+            fprintf(dVres,"%.8e ",dv[j+i*(xn+2)]);
         }
         fprintf(Vres, "\n");
         fprintf(dVres, "\n");
     }
     // p
+    fprintf(Pres,"TimeStep=%d\n",timeStep);
+    fprintf(dPres,"TimeStep=%d\n",timeStep);
     for(int i=0; i<yn+2; i++)
     {
         for(int j=0; j<xn+2; j++)
         {
             // fprintf(Ures,"%.4lf ",(u[j+i*(xn+3)] + u[(j+1)+i*(xn+3)]) / 2.0);
             // fprintf(Vres,"%.4lf ",(v[j+i*(xn+2)] + v[j+(i+1)*(xn+2)]) / 2.0);
-            fprintf(Pres,"%.4lf ",p[j+i*(xn+2)]);
-            fprintf(dPres,"%.4lf ",dp[j+i*(xn+2)]);
+            fprintf(Pres,"%.8e ",p[j+i*(xn+2)]);
+            fprintf(dPres,"%.8e ",dp[j+i*(xn+2)]);
         }
         // fprintf(Ures, "\n");
         // fprintf(Vres, "\n");
@@ -295,7 +300,7 @@ void write(double* u, double* v, double* p, double* du, double* dv, double* dp, 
 }
 
 // 残差などのログを出力する．
-void writeLog(char* fileName, int timeStep, double dt, double* res, int resNum)
+void writeLog(char* fileName, int timeStep, double dt, time_t elapsedTime, double* res, int resNum)
 {
     // ログファイルを開く
     FILE* outputLog = fopen(fileName,"a");
@@ -315,6 +320,10 @@ void writeLog(char* fileName, int timeStep, double dt, double* res, int resNum)
     {
         fprintf(outputLog," %.4e",res[i]);
     }
+
+    // 経過時間を書き込み
+    fprintf(outputLog," %ld",elapsedTime);
+
     // 改行文字を書き込み
     fprintf(outputLog,"\n");
 
@@ -346,8 +355,8 @@ void calcResidual(double* field, int numX, int numY, double* res, int startIndex
 int main()
 {
     // 計算設定
-    int stepNum = 1;
-    int outputInterval = 10;
+    int stepNum = 150000;
+    int outputInterval = 100;
 
     double dt = 0.001;
 
@@ -359,6 +368,12 @@ int main()
 
     // output file name
     char* logFileName = "data/log";
+    char timeDirName[100] = {0}; // 使っていない
+    char header[1000] = {0}; // header for data output
+
+    // 計算時間 計測
+    const time_t startTime = time(NULL); // プログラムの開始時間を取得
+    time_t elapsedTime = time(NULL) - startTime; // 経過時間．ログに出力
 
     double dx = 1.0 / (double)xn;
     double dy = 1.0 / (double)yn;
@@ -378,26 +393,35 @@ int main()
     // x = 0,xn+3 y = 0,y+3 連続の式を満たすように設定
 
     // initial conditions
-    // U
-    for(int i=1; i<yn+1; i++)
+    readData("initialConditions/U",xn+3,yn+2,u);
+    readData("initialConditions/V",xn+2,yn+3,v);
+    readData("initialConditions/p",xn+2,yn+2,p);
+
+    for(int j=0; j<xn+3; j++)
     {
-        for(int j=1; j<xn+2; j++)
-        {
-            u[j+i*(xn+3)] = 0;
-        }
+        printf("%lf ",u[j]);
     }
-    // V
-    for(int i=1; i<yn+2; i++)
-    {
-        for(int j=1; j<xn+1; j++)
-        {
-            v[j+i*(xn+2)] = 0;
-        }
-    }
+    printf("\n");
+
+    // // U
+    // for(int i=1; i<yn+1; i++)
+    // {
+    //     for(int j=1; j<xn+2; j++)
+    //     {
+    //         u[j+i*(xn+3)] = 0;
+    //     }
+    // }
+    // // V
+    // for(int i=1; i<yn+2; i++)
+    // {
+    //     for(int j=1; j<xn+1; j++)
+    //     {
+    //         v[j+i*(xn+2)] = 0;
+    //     }
+    // }
 
     // boundary conditions
-    double time = 0;
-    char timeDirName[100] = {0,}; // 使っていない
+    correctBoundaryConditions(u,v,p,xn,yn);
 
     // ログファイルのヘッダを書き込み
     FILE* outputLog = fopen(logFileName,"w");
@@ -409,15 +433,13 @@ int main()
     }
     else
     {
-        fprintf(outputLog,"TimeStep Time URes URes(cell) VRes VRes(cell) pRes pRes(cell)\n"); // ヘッダを書き込み
+        fprintf(outputLog,"TimeStep Time URes URes(cell) VRes VRes(cell) pRes pRes(cell) executionTime[s]\n"); // ヘッダを書き込み
         fclose(outputLog); // ファイルを閉じる
     }
 
     // SMAC法での計算
     for(int k=0; k<=stepNum; k++)
     {
-        // 境界条件の設定
-        correctBoundaryConditions(u,v,p,xn,yn);
 
         // 仮速度の計算
         // u,vに仮速度u*,v*が入る
@@ -427,14 +449,11 @@ int main()
         // 圧力修正子を計算
         poissonPressure(u,v,p,du,dv,dp,Re,dx,dy,dt,xn,yn);
 
-        // printf("called\n");
-
         // 速度，圧力の修正
         correct(u,v,p,du,dv,dp,dx,dy,dt,xn,yn);
 
-        // printf("called\n");
-
-        // write(u,v,p,du,dv,dp,xn,yn,timeDirName);
+        // 境界条件の修正
+        correctBoundaryConditions(u,v,p,xn,yn);
 
         // 残差を出力
         if (k % outputInterval == 0)
@@ -445,21 +464,44 @@ int main()
             calcResidual(dp,xn,yn,residuals,4);
 
             // ログに残差を出力
-            writeLog(logFileName,k,dt,residuals,6);
+            elapsedTime = time(NULL) - startTime;
+            writeLog(logFileName,k,dt,elapsedTime,residuals,6);
+
+            // headerの定義
+            sprintf(header,"TimeStep=%d xn=%d yn=%d Re=%.1lf",k,xn,yn,Re);
+
+            // 既存のデータを新しい時間ステップのデータで上書き
+            writeData("data/U",  u,xn+3,yn+2,header);
+            writeData("data/dU",du,xn+3,yn+2,header);
+            writeData("data/V",  v,xn+2,yn+3,header);
+            writeData("data/dV",dv,xn+2,yn+3,header);
+            writeData("data/p",  p,xn+2,yn+2,header);
+            writeData("data/dp",dp,xn+2,yn+2,header);
+            
+            // writeAll(k,u,v,p,du,dv,dp,xn,yn,timeDirName); // timeDirNameは不使用
         }
-
-        time = time + dt;
-
     }
     
     strcpy(timeDirName,"data");
     // printf("%s\n",timeDirName);
 
-    // //出力
+    // 出力
+
+    // headerの定義
+    sprintf(header,"TimeStep=%d xn=%d yn=%d Re=%.1lf",stepNum,xn,yn,Re);
+
+    // 既存のデータを新しい時間ステップのデータで上書き
+    writeData("data/U",  u,xn+3,yn+2,header);
+    writeData("data/dU",du,xn+3,yn+2,header);
+    writeData("data/V",  v,xn+2,yn+3,header);
+    writeData("data/dV",dv,xn+2,yn+3,header);
+    writeData("data/p",  p,xn+2,yn+2,header);
+    writeData("data/dp",dp,xn+2,yn+2,header);
+
     // write(u,v,p,du,dv,dp,xn,yn,);
 
     // 関数の引数には char* をいれないとだめ？  
-    write(u,v,p,du,dv,dp,xn,yn,timeDirName);
+    // writeAll(stepNum,u,v,p,du,dv,dp,xn,yn,timeDirName);
 
     // メモリの解放
     free(u);
