@@ -368,9 +368,14 @@ int main()
     const double Re             = configArray[5]; // Reynolds number
     
     // output file name
-    char* logFileName = "data/log";
-    char timeDirName[100] = {0}; // 使っていない
+    const char* resultDir = "result";
+    char logFileName[100] = "log"; // default 
+    char timeDirName[100] = {0}; 
+    char tmpDirName[100] = {0}; 
     char header[1000] = {0}; // header for data output
+
+    createDirectoryIfNotExists(resultDir);
+    sprintf(logFileName,"%s/log",resultDir);
 
     // 計算時間 計測
     const time_t startTime = time(NULL); // プログラムの開始時間を取得
@@ -393,35 +398,6 @@ int main()
     // y = yn+2 u 速度一定の壁面
     // y = 1, x=1,xn+2 速度0
     // x = 0,xn+3 y = 0,y+3 連続の式を満たすように設定
-
-    // initial conditions
-    // readData("initialConditions/U",xn+3,yn+2,u);
-    // readData("initialConditions/V",xn+2,yn+3,v);
-    // readData("initialConditions/p",xn+2,yn+2,p);
-
-    // Debug
-    // for(int j=0; j<xn+3; j++)
-    // {
-    //     printf("%lf ",u[j]);
-    // }
-    // printf("\n");
-
-    // // U
-    // for(int i=1; i<yn+1; i++)
-    // {
-    //     for(int j=1; j<xn+2; j++)
-    //     {
-    //         u[j+i*(xn+3)] = 0;
-    //     }
-    // }
-    // // V
-    // for(int i=1; i<yn+2; i++)
-    // {
-    //     for(int j=1; j<xn+1; j++)
-    //     {
-    //         v[j+i*(xn+2)] = 0;
-    //     }
-    // }
 
     // boundary conditions
     correctBoundaryConditions(u,v,p,xn,yn);
@@ -468,38 +444,50 @@ int main()
 
             // ログに残差を出力
             elapsedTime = time(NULL) - startTime;
-            writeLog(logFileName,k,dt,elapsedTime,residuals,6);
+            writeLog(logFileName,k,dt,elapsedTime,residuals,6); 
+            
+            // output directory for computed data
+            sprintf(timeDirName,"%s/%d",resultDir,k);
+            createDirectoryIfNotExists(timeDirName);
 
             // headerの定義
             sprintf(header,"TimeStep=%d xn=%d yn=%d Re=%.1lf",k,xn,yn,Re);
 
             // 既存のデータを新しい時間ステップのデータで上書き
-            writeData("data/U",  u,xn+3,yn+2,header);
-            writeData("data/dU",du,xn+3,yn+2,header);
-            writeData("data/V",  v,xn+2,yn+3,header);
-            writeData("data/dV",dv,xn+2,yn+3,header);
-            writeData("data/p",  p,xn+2,yn+2,header);
-            writeData("data/dp",dp,xn+2,yn+2,header);
+            sprintf(tmpDirName,"%s/U",timeDirName);
+            writeData(tmpDirName,  u,xn+3,yn+2,header);
+            sprintf(tmpDirName,"%s/dU",timeDirName);
+            writeData(tmpDirName,du,xn+3,yn+2,header);
+            sprintf(tmpDirName,"%s/V",timeDirName);
+            writeData(tmpDirName,  v,xn+2,yn+3,header);
+            sprintf(tmpDirName,"%s/dV",timeDirName);
+            writeData(tmpDirName,dv,xn+2,yn+3,header);
+            sprintf(tmpDirName,"%s/p",timeDirName);
+            writeData(tmpDirName,  p,xn+2,yn+2,header);
+            sprintf(tmpDirName,"%s/dp",timeDirName);
+            writeData(tmpDirName,dp,xn+2,yn+2,header);
             
             // writeAll(k,u,v,p,du,dv,dp,xn,yn,timeDirName); // timeDirNameは不使用
         }
     }
     
-    strcpy(timeDirName,"data");
+    // strcpy(timeDirName,"data");
     // printf("%s\n",timeDirName);
 
     // 出力
 
-    // headerの定義
-    sprintf(header,"TimeStep=%d xn=%d yn=%d Re=%.1lf",stepNum,xn,yn,Re);
+    
 
-    // 既存のデータを新しい時間ステップのデータで上書き
-    writeData("data/U",  u,xn+3,yn+2,header);
-    writeData("data/dU",du,xn+3,yn+2,header);
-    writeData("data/V",  v,xn+2,yn+3,header);
-    writeData("data/dV",dv,xn+2,yn+3,header);
-    writeData("data/p",  p,xn+2,yn+2,header);
-    writeData("data/dp",dp,xn+2,yn+2,header);
+    // headerの定義
+    // sprintf(header,"TimeStep=%d xn=%d yn=%d Re=%.1lf",stepNum,xn,yn,Re);
+
+    // // 既存のデータを新しい時間ステップのデータで上書き
+    // writeData("data/U",  u,xn+3,yn+2,header);
+    // writeData("data/dU",du,xn+3,yn+2,header);
+    // writeData("data/V",  v,xn+2,yn+3,header);
+    // writeData("data/dV",dv,xn+2,yn+3,header);
+    // writeData("data/p",  p,xn+2,yn+2,header);
+    // writeData("data/dp",dp,xn+2,yn+2,header);
 
     // write(u,v,p,du,dv,dp,xn,yn,);
 

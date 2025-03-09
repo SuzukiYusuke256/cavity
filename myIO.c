@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdarg.h> 
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <errno.h>
 
 #include "myIO.h"
 
@@ -101,3 +104,39 @@ int writeData(char* fileName, double* field, int numX, int numY, char* header)
     return 0;
 }
 
+/**
+ * Creates a directory if it doesn't already exist
+ * 
+ * @param dirPath Path of the directory to create
+ * @return 0 on success (directory exists or was created), -1 on failure
+ */
+int createDirectoryIfNotExists(const char* dirPath) {
+    struct stat st;
+    
+    // Check if directory already exists
+    if (stat(dirPath, &st) == 0) {
+        if (S_ISDIR(st.st_mode)) {
+            // Directory already exists
+            return 0;
+        } else {
+            // Path exists but is not a directory
+            fprintf(stderr, "Error: '%s' exists but is not a directory\n", dirPath);
+            return -1;
+        }
+    }
+    
+    // Directory doesn't exist, create it
+#ifdef _WIN32
+    // Windows
+    if (mkdir(dirPath) != 0) {
+#else
+    // Unix/Linux (permission 0755)
+    if (mkdir(dirPath, 0755) != 0) {
+#endif
+        fprintf(stderr, "Error: Failed to create directory '%s'. Error code: %d\n", dirPath, errno);
+        return -1;
+    }
+    
+    printf("Created directory '%s'\n", dirPath);
+    return 0;
+}

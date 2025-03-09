@@ -1,7 +1,6 @@
-stepNum 1000 
-outputInterval 100
-DeltaT 0.001
+stepNum 100
+outputInterval 10
+DeltaT 0.0001
 numX 128
 numY 128
 Re 100
-stepNum 
