@@ -1,6 +1,7 @@
-stepNum 100
-outputInterval 10
+stepNum 20000
+outputInterval 100
 DeltaT 0.0001
 numX 128
 numY 128
 Re 100
+withIC 1

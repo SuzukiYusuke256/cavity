@@ -355,7 +355,7 @@ void calcResidual(double* field, int numX, int numY, double* res, int startIndex
 int main()
 {
     // read computational conditions
-    const int configNum = 6;
+    const int configNum = 7;
     
     double* configArray = (double*)calloc(configNum,sizeof(double));
     readConfig("config",configNum,configArray);
@@ -366,6 +366,7 @@ int main()
     const int xn                = (int)configArray[3]; 
     const int yn                = (int)configArray[4];
     const double Re             = configArray[5]; // Reynolds number
+    const int withIC           = (int)configArray[6]; // initial condition
     
     // output file name
     const char* resultDir = "result";
@@ -393,6 +394,16 @@ int main()
     double* dp = (double*)calloc((xn+2)*(yn+2),sizeof(double));
 
     double residuals[6] = {0}; // ログに残差を出力するための配列．0で初期化
+
+
+    // initial conditions
+    if (withIC == 1)
+    {   
+        printf("reading initial conditions...\n");
+        readData("initialConditions/U",xn+3,yn+2,u);
+        readData("initialConditions/V",xn+2,yn+3,v);
+        readData("initialConditions/p",xn+2,yn+2,p);
+    }
 
     // 境界条件
     // y = yn+2 u 速度一定の壁面
@@ -451,7 +462,7 @@ int main()
             createDirectoryIfNotExists(timeDirName);
 
             // headerの定義
-            sprintf(header,"TimeStep=%d xn=%d yn=%d Re=%.1lf",k,xn,yn,Re);
+            sprintf(header,"TimeStep=%d DeltaT=%lf xn=%d yn=%d Re=%.1lf",k,dt,xn,yn,Re);
 
             // 既存のデータを新しい時間ステップのデータで上書き
             sprintf(tmpDirName,"%s/U",timeDirName);
