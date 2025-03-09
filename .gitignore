@@ -1,4 +1,4 @@
 .vscode/
 data*/
-result/
+result*/
 *.o

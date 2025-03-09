@@ -192,7 +192,7 @@ void poissonPressure(double* u, double* v, double* p, double* du, double* dv, do
 }
 
 // 速度，圧力の修正
-void correct(double* u, double* v, double* p, double* du, double* dv, double* dp, double dx, double dy, double dt, int xn, int yn)
+void correct(double* u, double* v, double* p, double* du, double* dv, double* dp, double dx, double dy, double dt, int xn, int yn, int pRefID)
 {
     // 圧力と速度の修正
     // U
@@ -217,6 +217,7 @@ void correct(double* u, double* v, double* p, double* du, double* dv, double* dp
 
 
     // 圧力
+    // 圧力修正子により圧力を修正．
     for(int i=1; i<yn+1; i++)
     {
         for(int j=1; j<xn+1; j++)
@@ -224,6 +225,17 @@ void correct(double* u, double* v, double* p, double* du, double* dv, double* dp
             p[j+i*(xn+2)] += dp[j+i*(xn+2)];
         }
     }
+    // 基準セルの圧力が0になるように全体を修正．
+    double pRef = p[pRefID];
+    for(int i=1; i<yn+1; i++)
+    {
+        for(int j=1; j<xn+1; j++)
+        {
+            p[j+i*(xn+2)] -= pRef;
+        }
+    }
+
+
 }
 
 // データを書き込む
@@ -333,29 +345,31 @@ void writeLog(char* fileName, int timeStep, double dt, time_t elapsedTime, doubl
 
 // 残差を計算
 // field        残差を計算する場(速度，圧力など)
+// startIndexX,Y 残差計算に使用する領域の最初のインデックス．dUなら，X=2 (ゴーストセル，境界セルを除く) Y=1 (ゴーストセル除く)
 // numX, numY   計算に使う領域の格子点数．基本はゴーストセルを除いた値を入れる．
-// startIndex   残差をまとめて配列resに入れる．各フィールドがどの番号から始まるのか指定．Uは0,1, Vは2,3,... など．
-void calcResidual(double* field, int numX, int numY, double* res, int startIndex)
+// maxNumX      元の配列のx方向の要素数．dUならxn+3
+// resStartIndex   残差をまとめて配列resに入れる．各フィールドがどの番号から始まるのか指定．Uは0,1, Vは2,3,... など．
+void calcResidual(double* field, int startIndexX, int startIndexY, int numX, int numY, int maxNumX, double* res, int resStartIndex)
 {
     double tmpErr = 0;
-    for(int i=1; i<numY+1; i++)
+    for(int i=startIndexY; i<numY; i++)
     {
-        for(int j=1; j<numX+1; j++)
+        for(int j=startIndexX; j<numX; j++)
         {   
-            tmpErr += fabs(field[j+i*(numX+2)]);
+            tmpErr += fabs(field[j+i*maxNumX]);
             // tmpErr += du[j+i*(numX+2)]*du[j+i*(numX+2)];
         }
     }
     
     // 残差を格納
-    res[startIndex+0] = tmpErr;
-    res[startIndex+1] = tmpErr/(numX*numY);
+    res[resStartIndex+0] = tmpErr;
+    res[resStartIndex+1] = tmpErr/(numX*numY);
 }
 
 int main()
 {
     // read computational conditions
-    const int configNum = 7;
+    const int configNum = 8;
     
     double* configArray = (double*)calloc(configNum,sizeof(double));
     readConfig("config",configNum,configArray);
@@ -366,7 +380,11 @@ int main()
     const int xn                = (int)configArray[3]; 
     const int yn                = (int)configArray[4];
     const double Re             = configArray[5]; // Reynolds number
-    const int withIC           = (int)configArray[6]; // initial condition
+    const int withIC            = (int)configArray[6]; // initial condition
+    const double thresh         = configArray[7]; // convergence threshold
+
+    // 圧力の基準セル．この格子点の圧力を0とする．
+    const int pRefID            = 1*(xn+2) + 1; // i = 1, j = 1 (0始まり)  
     
     // output file name
     const char* resultDir = "result";
@@ -440,19 +458,34 @@ int main()
         poissonPressure(u,v,p,du,dv,dp,Re,dx,dy,dt,xn,yn);
 
         // 速度，圧力の修正
-        correct(u,v,p,du,dv,dp,dx,dy,dt,xn,yn);
+        correct(u,v,p,du,dv,dp,dx,dy,dt,xn,yn,pRefID);
 
         // 境界条件の修正
         correctBoundaryConditions(u,v,p,xn,yn);
 
-        // 残差を出力
-        if (k % outputInterval == 0)
-        {
-            // 残差の計算
-            calcResidual(du,xn+1,yn,residuals,0);
-            calcResidual(dv,xn,yn+1,residuals,2);
-            calcResidual(dp,xn,yn,residuals,4);
+        // 残差の計算
+        calcResidual(du,2,1,xn-1,yn,xn+3,residuals,0);
+        calcResidual(dv,1,2,xn,yn-1,xn+2,residuals,2);
+        calcResidual(dp,1,1,xn,yn,xn+2,residuals,4);
 
+        // 計算の終了判定
+        int isEnd = 0;
+
+        // 最大回数に達する
+        if (k == stepNum)
+        {
+            isEnd = 1;
+        }
+
+        // 残差が収束判定のしきい値を下回る k=0は残差が0なので除く
+        if (k>0 && residuals[1] < thresh && residuals[3] < thresh) // du, dvで収束を判定
+        {
+            isEnd = 1; 
+        } 
+
+        // 残差を出力 ，一定間隔か，収束条件を満たした場合．
+        if (k % outputInterval == 0 || isEnd == 1)
+        {
             // ログに残差を出力
             elapsedTime = time(NULL) - startTime;
             writeLog(logFileName,k,dt,elapsedTime,residuals,6); 
@@ -480,30 +513,13 @@ int main()
             
             // writeAll(k,u,v,p,du,dv,dp,xn,yn,timeDirName); // timeDirNameは不使用
         }
+
+        // 計算を終了
+        if (isEnd == 1)
+        {
+            break;
+        }
     }
-    
-    // strcpy(timeDirName,"data");
-    // printf("%s\n",timeDirName);
-
-    // 出力
-
-    
-
-    // headerの定義
-    // sprintf(header,"TimeStep=%d xn=%d yn=%d Re=%.1lf",stepNum,xn,yn,Re);
-
-    // // 既存のデータを新しい時間ステップのデータで上書き
-    // writeData("data/U",  u,xn+3,yn+2,header);
-    // writeData("data/dU",du,xn+3,yn+2,header);
-    // writeData("data/V",  v,xn+2,yn+3,header);
-    // writeData("data/dV",dv,xn+2,yn+3,header);
-    // writeData("data/p",  p,xn+2,yn+2,header);
-    // writeData("data/dp",dp,xn+2,yn+2,header);
-
-    // write(u,v,p,du,dv,dp,xn,yn,);
-
-    // 関数の引数には char* をいれないとだめ？  
-    // writeAll(stepNum,u,v,p,du,dv,dp,xn,yn,timeDirName);
 
     // メモリの解放
     free(configArray);
