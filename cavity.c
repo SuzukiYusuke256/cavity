@@ -363,8 +363,8 @@ int main()
     const int stepNum           = (int)configArray[0];
     const int outputInterval    = (int)configArray[1];
     const double dt             = configArray[2]; // Delta T
-    const int xn                = configArray[3]; 
-    const int yn                = configArray[4];
+    const int xn                = (int)configArray[3]; 
+    const int yn                = (int)configArray[4];
     const double Re             = configArray[5]; // Reynolds number
     
     // output file name
@@ -507,6 +507,7 @@ int main()
     // writeAll(stepNum,u,v,p,du,dv,dp,xn,yn,timeDirName);
 
     // メモリの解放
+    free(configArray);
     free(u);
     free(v);
     free(p);

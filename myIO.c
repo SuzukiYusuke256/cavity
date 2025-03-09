@@ -17,7 +17,8 @@ int readConfig(const char* configName, int num, double* configArray)
     }
     
     for (int ii = 0; ii < num; ii++) {
-        if (fscanf(fp, "%s %lf", buffer, &dataArray[ii]) != 1) {
+        fscanf(fp, "%s", buffer); // configの設定項目 (読み飛ばす)
+        if (fscanf(fp, "%lf", &configArray[ii]) != 1) {
             fprintf(stderr, "read config\nError: Failed to read config data. Location: row %d\n", ii);
             fclose(fp);
             return -1;
