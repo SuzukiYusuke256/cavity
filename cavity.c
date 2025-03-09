@@ -39,7 +39,7 @@ void correctBoundaryConditions(double* u, double* v, double* p, int xn, int yn)
     for(int j=1; j<xn+1; j++)
     {
         // 壁面速度による境界条件
-        u[1 + j * (xn+3)] = 0;
+        u[1 + j * (xn+3)] = 0; // すべりなし
         u[(xn+1) + j * (xn+3)] = 0; // すべりなし
     
         // 連続の式による境界条件
@@ -355,7 +355,7 @@ void calcResidual(double* field, int numX, int numY, double* res, int startIndex
 int main()
 {
     // 計算設定
-    int stepNum = 150000;
+    int stepNum = 1000;
     int outputInterval = 100;
 
     double dt = 0.001;
@@ -393,9 +393,9 @@ int main()
     // x = 0,xn+3 y = 0,y+3 連続の式を満たすように設定
 
     // initial conditions
-    readData("initialConditions/U",xn+3,yn+2,u);
-    readData("initialConditions/V",xn+2,yn+3,v);
-    readData("initialConditions/p",xn+2,yn+2,p);
+    // readData("initialConditions/U",xn+3,yn+2,u);
+    // readData("initialConditions/V",xn+2,yn+3,v);
+    // readData("initialConditions/p",xn+2,yn+2,p);
 
     // Debug
     // for(int j=0; j<xn+3; j++)
