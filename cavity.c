@@ -318,7 +318,7 @@ void writeLog(char* fileName, int timeStep, double dt, time_t elapsedTime, doubl
     // 残差を書き込み
     for (int i=0; i<resNum; i++)
     {
-        fprintf(outputLog," %.4e",res[i]);
+        fprintf(outputLog," %.8e",res[i]);
     }
 
     // 経過時間を書き込み
@@ -397,11 +397,12 @@ int main()
     readData("initialConditions/V",xn+2,yn+3,v);
     readData("initialConditions/p",xn+2,yn+2,p);
 
-    for(int j=0; j<xn+3; j++)
-    {
-        printf("%lf ",u[j]);
-    }
-    printf("\n");
+    // Debug
+    // for(int j=0; j<xn+3; j++)
+    // {
+    //     printf("%lf ",u[j]);
+    // }
+    // printf("\n");
 
     // // U
     // for(int i=1; i<yn+1; i++)
