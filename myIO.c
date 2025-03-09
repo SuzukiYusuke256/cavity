@@ -4,6 +4,31 @@
 
 #include "myIO.h"
 
+int readConfig(const char* configName, int num, double* configArray)
+{
+    FILE* fp;
+    char buffer[1024]; // configの1列目を読み込むためのバッファ
+    
+    // ファイルを開く
+    fp = fopen(configName, "r");
+    if (fp == NULL) {
+        fprintf(stderr, "read config\nError: Failed to open %s\n", configName);
+        return -1;
+    }
+    
+    for (int ii = 0; ii < num; ii++) {
+        if (fscanf(fp, "%s %lf", buffer, &dataArray[ii]) != 1) {
+            fprintf(stderr, "read config\nError: Failed to read config data. Location: row %d\n", ii);
+            fclose(fp);
+            return -1;
+        }
+    }
+    
+    // ファイルを閉じる
+    fclose(fp);
+    return 0;
+}
+
 /**
  * ファイルからデータを読み込む関数
  * 

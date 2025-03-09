@@ -154,8 +154,6 @@ void poissonPressure(double* u, double* v, double* p, double* du, double* dv, do
 
     for (int itr=0; itr<itrMax; itr++)
     {
-        err = 0.0;
-
         // 圧力境界条件
         // 壁面での勾配0
         // 上下面
@@ -170,6 +168,8 @@ void poissonPressure(double* u, double* v, double* p, double* du, double* dv, do
             dp[0 + j * (xn+2)] = dp[1 + j * (xn+2)];
             dp[(xn+1) + j * (xn+2)] = dp[xn + j * (xn+2)];
         }
+
+        err = 0.0;
         
         // poisson方程式を解く
         for(int j=1; j<yn+1; j++)
@@ -354,18 +354,19 @@ void calcResidual(double* field, int numX, int numY, double* res, int startIndex
 
 int main()
 {
-    // 計算設定
-    int stepNum = 1000;
-    int outputInterval = 100;
+    // read computational conditions
+    const int configNum = 6;
+    
+    double* configArray = (double*)calloc(configNum,sizeof(double));
+    readConfig("config",configNum,configArray);
 
-    double dt = 0.001;
-
-    int xn = 128;
-    int yn = 128;
-
-    // 流体の物性値
-    double Re = 100;
-
+    const int stepNum           = (int)configArray[0];
+    const int outputInterval    = (int)configArray[1];
+    const double dt             = configArray[2]; // Delta T
+    const int xn                = configArray[3]; 
+    const int yn                = configArray[4];
+    const double Re             = configArray[5]; // Reynolds number
+    
     // output file name
     char* logFileName = "data/log";
     char timeDirName[100] = {0}; // 使っていない
@@ -378,6 +379,7 @@ int main()
     double dx = 1.0 / (double)xn;
     double dy = 1.0 / (double)yn;
     
+    // field initialization
     double* u = (double*)calloc((xn+3)*(yn+2),sizeof(double));
     double* v = (double*)calloc((xn+2)*(yn+3),sizeof(double));
     double* p = (double*)calloc((xn+2)*(yn+2),sizeof(double));
