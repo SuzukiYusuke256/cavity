@@ -1,8 +1,8 @@
-stepNum                 1000
-outputInterval          100
-DeltaT                  0.001
-numX                    128
-numY                    128
+stepNum                 3000000
+outputInterval          1000
+DeltaT                  0.0002
+numX                    256
+numY                    256
 Re                      100
-withIC                  0
-convergenceThreshold    2e-4
+withInitConditions      0
+convergenceThreshold    1e-16

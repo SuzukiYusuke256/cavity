@@ -1,4 +1,5 @@
 .vscode/
 data*/
 result*/
+cavity_smac*/
 *.o
