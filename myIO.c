@@ -63,7 +63,7 @@ int readData(const char* fileName, int numX, int numY, double* dataArray) {
     // データを読み込む
     for (int y = 0; y < numY; y++) {
         for (int x = 0; x < numX; x++) {
-            if (fscanf(fp, "%lf", &dataArray[y * numX + x]) != 1) {
+            if (fscanf(fp, "%lf", &dataArray[y*numX + x]) != 1) {
                 fprintf(stderr, "エラー: データの読み込みに失敗しました。位置: (%d, %d)\n", x, y);
                 fclose(fp);
                 return -1;
@@ -91,11 +91,12 @@ int writeData(char* fileName, double* field, int numX, int numY, char* header)
     // ファイルに文字列を書き込む
     fprintf(fp, "%s\n",header);
 
-    for(int i=0; i<numY; i++)
+    for(int jj=0; jj<numY; jj++)
     {
-        for(int j=0; j<numX; j++)
+        for(int ii=0; ii<numX; ii++)
         {
-            fprintf(fp,"%.8e ",field[j+i*numX]);
+            fprintf(fp,"%.8e ",field[ii + jj*numX]);
+            // printf("%d %d %lf\n",ii,jj,field[ii + jj*numX]);
         }
         fprintf(fp, "\n");
     }

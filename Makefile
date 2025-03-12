@@ -19,6 +19,10 @@ OBJS = $(SRCS:.c=.o)
 # デフォルトのターゲット
 all: $(TARGET)
 
+# post process
+postProcess: myPostProcess.o myIO.o
+	$(CC) $(CFLAGS) -o $@ $^
+
 # 実行ファイルの生成ルール
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^
