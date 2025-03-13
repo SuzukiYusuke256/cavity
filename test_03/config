@@ -1,0 +1,9 @@
+caseName                test_03
+stepNum                 100
+outputInterval          10
+DeltaT                  0.001
+Nx                      16
+Ny                      16
+Re                      100
+withInitialCondition    0
+covergenceThreshold     1e-16

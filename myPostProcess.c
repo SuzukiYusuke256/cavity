@@ -11,14 +11,26 @@
 // calculate gradient
 int main()
 {
+    // read config data
+    // double* configArray = (double*)calloc(CFG_NUM,sizeof(double));
+
+    const char* caseName = "test_02";
+    
+    Config cfg;
+    char cfgName[128] = "";
+    strcpy(cfgName,caseName); // cfgName = caseName
+    strcat(cfgName,"/config"); // cfgName = caseName/config
+
+    printf("%s\n",cfgName);
+
+    readConfig(cfgName,&cfg);
+
     // Allocate arrays for cell center velocities
     char tmpStr[100] = "";
-    const char* caseName = "test_02";
 
-    // read config data
-    double* configArray = (double*)calloc(CFG_NUM,sizeof(double));
-    Config cfg;
-    readConfig("test_02/config",&cfg);
+    // const char* caseName = "test_02";
+    // Config cfg;
+    // readConfig("test_02/config",&cfg);
     
     // const int xn = (int)configArray[CFG_NX];
     // const int yn = (int)configArray[CFG_NY];

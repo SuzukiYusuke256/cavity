@@ -6,6 +6,8 @@
 #include <time.h>
 
 #include "myIO.h"
+#include "myConst.c"
+#include "config.h"
 
 // 境界条件に合わせてセルの値を更新
 void correctBoundaryConditions(double* u, double* v, double* p, int xn, int yn)
@@ -369,19 +371,26 @@ void calcResidual(double* field, int startIndexX, int startIndexY, int numX, int
 int main()
 {
     // read computational conditions
-    const int configNum = 8;
+    // const int configNum = 8;
+    const char* caseName = "test_03";
     
-    double* configArray = (double*)calloc(configNum,sizeof(double));
-    readConfig("config",configArray,configNum);
+    Config cfg;
+    char cfgName[128] = "";
+    strcpy(cfgName,caseName); // cfgName = caseName
+    strcat(cfgName,"/config"); // cfgName = caseName/config
+    readConfig(cfgName,&cfg);
 
-    const int stepNum           = (int)configArray[0];
-    const int outputInterval    = (int)configArray[1];
-    const double dt             = configArray[2]; // Delta T
-    const int xn                = (int)configArray[3]; 
-    const int yn                = (int)configArray[4];
-    const double Re             = configArray[5]; // Reynolds number
-    const int withIC            = (int)configArray[6]; // initial condition
-    const double thresh         = configArray[7]; // convergence threshold
+    // double* configArray = (double*)calloc(configNum,sizeof(double));
+    // readConfig("config",configArray,configNum);
+
+    const int stepNum           = cfg.stepNum;
+    const int outputInterval    = cfg.outputInterval;
+    const double dt             = cfg.deltaT;
+    const int xn                = cfg.nx;
+    const int yn                = cfg.ny;
+    const double Re             = cfg.re;
+    const int withIC            = cfg.withInitialCondition;
+    const double thresh         = cfg.convergenceThreshold;
 
     // 圧力の基準セル．この格子点の圧力を0とする．
     const int pRefID            = 1*(xn+2) + 1; // i = 1, j = 1 (0始まり)  
@@ -522,7 +531,6 @@ int main()
     }
 
     // メモリの解放
-    free(configArray);
     free(u);
     free(v);
     free(p);
