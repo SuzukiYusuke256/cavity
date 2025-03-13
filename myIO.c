@@ -19,6 +19,12 @@ int readConfig(const char* configName, double* configArray, int num)
         return -1;
     }
     
+    // 
+    fscanf(fp, "%s", buffer); // configのcaseName (読み飛ばす)
+    fscanf(fp, "%s", buffer); // configのcaseName (読み飛ばす)
+
+    // printf("%s\n",buffer);
+
     for (int ii = 0; ii < num; ii++) {
         fscanf(fp, "%s", buffer); // configの設定項目 (読み飛ばす)
         if (fscanf(fp, "%lf", &configArray[ii]) != 1) {
@@ -26,6 +32,7 @@ int readConfig(const char* configName, double* configArray, int num)
             fclose(fp);
             return -1;
         }
+        // printf("%lf\n",configArray[ii]);
     }
     
     // ファイルを閉じる
@@ -63,11 +70,14 @@ int readData(const char* fileName, int numX, int numY, double* dataArray) {
     // データを読み込む
     for (int y = 0; y < numY; y++) {
         for (int x = 0; x < numX; x++) {
-            if (fscanf(fp, "%lf", &dataArray[y*numX + x]) != 1) {
-                fprintf(stderr, "エラー: データの読み込みに失敗しました。位置: (%d, %d)\n", x, y);
-                fclose(fp);
-                return -1;
-            }
+            fscanf(fp, "%lf", &dataArray[y*numX + x]);
+            // printf("%ld\n",dataArray[y*numX + x]);
+
+            // if (fscanf(fp, "%lf", &dataArray[y*numX + x]) != 1) {
+            //     fprintf(stderr, "read Data\nError : データの読み込みに失敗しました。位置: (%d, %d)\n", x, y);
+            //     fclose(fp);
+            //     return -1;
+            // }
         }
     }
     

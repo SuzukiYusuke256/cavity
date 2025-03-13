@@ -372,7 +372,7 @@ int main()
     const int configNum = 8;
     
     double* configArray = (double*)calloc(configNum,sizeof(double));
-    readConfig("config",configNum,configArray);
+    readConfig("config",configArray,configNum);
 
     const int stepNum           = (int)configArray[0];
     const int outputInterval    = (int)configArray[1];

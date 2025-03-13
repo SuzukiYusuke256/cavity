@@ -12,12 +12,14 @@ int main()
 {
     // Allocate arrays for cell center velocities
     char tmpStr[100] = "";
-    double* configArray = (double*)calloc(configNum,sizeof(double));
+    const char* caseName = "test";
 
-    readConfig("config",configArray,CFG_NUM);
+    double* configArray = (double*)calloc(CFG_NUM,sizeof(double));
+    readConfig("test/config",configArray,CFG_NUM);
+    
+    const int xn = (int)configArray[CFG_NX];
+    const int yn = (int)configArray[CFG_NY];
 
-    const int xn = 4;
-    const int yn = 4;
     const double rdx = (double)xn; // 0.25 dx = 1/xn. rdx = 1/(1/xn) = xn;
     const double rdy = (double)yn;
 
@@ -32,15 +34,7 @@ int main()
 
     double* wallDudy =  (double*)calloc(xn, sizeof(double));
 
-    
-    // if (uCenter == NULL || vCenter == NULL) {
-    //     fprintf(stderr, "Error: Memory allocation failed in calcStaggeredToCellCenterVelocityGradients\n");
-    //     return -1;
-    // }
-
-    // readData("cavity_smac_01-2/26492/U",xn+3,yn+2,u);
-    readData("test/U",xn+2,yn+3,u);
-    readConfig()
+    readData("test/U",xn+3,yn+2,u);
 
     // readData("debug/testU",xn+3,yn+2,u);
 
@@ -58,10 +52,14 @@ int main()
     calcCellCenterVelocityGradients(uCenter, vCenter, dudx, dudy, dvdx, dvdy, xn, yn, rdx, rdy);
     calcSurfaceVelocityGradients(uCenter,vCenter,wallDudy,xn,yn,rdx,rdy);
 
-    sprintf(tmpStr,"%s U %dx%d (Nx:%d Ny:%d)", )
-    writeData("test/testDudy",dudy,xn,yn,"test");
-    writeData("debug/testUCenter",uCenter,xn+2,yn+2,"test");
-    writeData("debug/testSurfaceDudy",wallDudy,1,xn,"test"); // 縦に出力
+    sprintf(tmpStr,"%s vU %dx%d (Nx:%d Ny:%d)",caseName,xn+2,yn+2,xn,yn);
+    writeData("test/vU",uCenter,xn+2,yn+2,tmpStr);
+    sprintf(tmpStr,"%s vDUdy %dx%d (Nx:%d Ny:%d)",caseName,xn,yn,xn,yn);
+    writeData("test/vDUdy",dudy,xn,yn,tmpStr);
+    
+    sprintf(tmpStr,"%s sDUdy %dx%d (Nx:%d Ny:%d)",caseName,xn,1,xn,yn);
+    writeData("test/sDudy",wallDudy,xn,1,tmpStr); // 縦に出力
+
     // writeData("cavity_smac_01-2/26492/uCenter",uCenter,xn+2,yn+2,"u_center");
     
     // Free memory
@@ -198,7 +196,7 @@ int calcSurfaceVelocityGradients(double* uCenter, double* vCenter, double* wallD
     for (int ii = 0; ii < xn; ii++) {
 
         // Calculate gradients using central difference method with inverse multiplication
-        wallDudy[ii] = (uCenter[ii + (yn+1)*(xn+2)] - uCenter[ii + yn*(xn+2)]) * rdy;
+        wallDudy[ii] = (uCenter[(ii+1) + (yn+1)*(xn+2)] - uCenter[(ii+1) + yn*(xn+2)]) * rdy;
     }
 
     return 0;

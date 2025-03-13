@@ -3,10 +3,10 @@
 
 const int CFG_NUM = 8;
 
-const int CFG_CASE_NAME     = 0;
-const int CFG_STEP_NUM      = 1;
-const int CFG_NX            = 4;
-const int CFG_NY            = 5;
+// const int CFG_CASE_NAME     = 0;
+const int CFG_STEP_NUM      = 0;
+const int CFG_NX            = 3;
+const int CFG_NY            = 4;
 
 // caseName                test
 // stepNum                 100

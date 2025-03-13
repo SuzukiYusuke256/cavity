@@ -2,8 +2,8 @@ caseName                test
 stepNum                 100
 outputInterval          10
 DeltaT                  0.001
-Nx                      128
-Ny                      128
+Nx                      4
+Ny                      4
 Re                      100
 withInitialCondition    0
 covergenceThreshold     1e-16
