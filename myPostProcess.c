@@ -14,6 +14,7 @@ int main()
     char tmpStr[100] = "";
     const char* caseName = "test";
 
+    // read config data
     double* configArray = (double*)calloc(CFG_NUM,sizeof(double));
     readConfig("test/config",configArray,CFG_NUM);
     
