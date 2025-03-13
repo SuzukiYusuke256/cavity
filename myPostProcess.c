@@ -53,6 +53,7 @@ int main()
     double* wallDudy =  (double*)calloc(xn, sizeof(double));
 
     // debug
+    
     readData("test_02/U",xn+3,yn+2,u);
 
     // Calculate velocities at cell centers

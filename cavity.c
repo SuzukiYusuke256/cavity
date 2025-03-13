@@ -508,17 +508,23 @@ int main()
 
             // 既存のデータを新しい時間ステップのデータで上書き
             sprintf(tmpDirName,"%s/U",timeDirName);
-            writeDataHeader(tmpDirName,  u,xn+3,yn+2,header);
+            writeData(tmpDirName,u,xn+3,yn+2,caseName,"U",xn,yn,k);
+            // writeDataHeader(tmpDirName,  u,xn+3,yn+2,header);
             sprintf(tmpDirName,"%s/dU",timeDirName);
-            writeDataHeader(tmpDirName,du,xn+3,yn+2,header);
+            writeData(tmpDirName,du,xn+3,yn+2,caseName,"dU",xn,yn,k);
+            // writeDataHeader(tmpDirName,du,xn+3,yn+2,header);
             sprintf(tmpDirName,"%s/V",timeDirName);
-            writeDataHeader(tmpDirName,  v,xn+2,yn+3,header);
+            writeData(tmpDirName,v,xn+2,yn+3,caseName,"V",xn,yn,k);
+            // writeDataHeader(tmpDirName,  v,xn+2,yn+3,header);
             sprintf(tmpDirName,"%s/dV",timeDirName);
-            writeDataHeader(tmpDirName,dv,xn+2,yn+3,header);
+            writeData(tmpDirName,dv,xn+2,yn+3,caseName,"dV",xn,yn,k);
+            // writeDataHeader(tmpDirName,dv,xn+2,yn+3,header);
             sprintf(tmpDirName,"%s/p",timeDirName);
-            writeDataHeader(tmpDirName,  p,xn+2,yn+2,header);
+            writeData(tmpDirName,p,xn+2,yn+2,caseName,"p",xn,yn,k);
+            // writeDataHeader(tmpDirName,  p,xn+2,yn+2,header);
             sprintf(tmpDirName,"%s/dp",timeDirName);
-            writeDataHeader(tmpDirName,dp,xn+2,yn+2,header);
+            writeData(tmpDirName,dp,xn+2,yn+2,caseName,"dp",xn,yn,k);
+            // writeDataHeader(tmpDirName,dp,xn+2,yn+2,header);
             
             // writeAll(k,u,v,p,du,dv,dp,xn,yn,timeDirName); // timeDirNameは不使用
         }
