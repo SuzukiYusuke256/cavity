@@ -6,12 +6,24 @@
 
 int main()
 {
-    // double* configArray = (double*)calloc(CFG_NUM,sizeof(double));
-    Config config;
-    readConfig("test_02/config",&config);
+    const char* caseName = "test_01";
+    
+    Config cfg;
+    char cfgName[128] = "";
+    strcpy(cfgName,caseName); // cfgName = caseName
+    strcat(cfgName,"/config"); // cfgName = caseName/config
 
-    printf("%s\n",config.caseName);
-    printf("%.3e\n",config.convergenceThreshold);
+    readConfig(cfgName,&cfg);
+
+    const int nx = cfg.nx;
+    const int ny = cfg.ny;
+
+    double* u = (double*)calloc((nx+3)*(ny+2), sizeof(double));
+
+    readData(u,nx+3,ny+2,caseName,0,"U");
+
+    printf("%lf\n", u[1 + 3*(nx+3)]);
+
 
     return 0;
 }

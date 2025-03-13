@@ -4,9 +4,10 @@
 #include "config.h"
 
 int readConfig(char* configName, Config* config);
-int readData(const char* fileName, int numX, int numY, double* dataArray);
+// int readData(const char* fileName, int numX, int numY, double* dataArray);
+int readData(double* field, int numX, int numY, char* caseName, int timeStep, char* fieldName);
+int writeData(double* field, int numX, int numY, char* caseName, int timeStep, char* fieldName, int nx, int ny);
 int writeDataHeader(char* fileName, double* field, int numX, int numY, char* header);
-int writeData(char* fileName, double* field, int numX, int numY, char* caseName, char* fieldName, int nx, int ny, int timeStep);
 
 int write(char* filename, int dataNum, int num, char** headings, ...);
 

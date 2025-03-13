@@ -69,10 +69,21 @@ int readConfig(char* configName, Config* config)
  * @param dataArray  読み込んだデータを格納する配列（サイズはnumX*numY）
  * @return           成功した場合は0、失敗した場合は-1を返す
  */
-int readData(const char* fileName, int numX, int numY, double* dataArray) {
+int readData (double* field, int numX, int numY, char* caseName, int timeStep, char* fieldName) 
+{
     FILE* fp;
+    char fileName[1024];
+    char cTimeStep[128]; // store time as string
     char buffer[1024]; // ヘッダー行を読み込むためのバッファ
     
+    // construct file name
+    strcpy(fileName,caseName); // fileName = caseName
+    strcat(fileName,"/"); // fileName = caseName/
+    sprintf(cTimeStep,"%d",timeStep);
+    strcat(fileName,cTimeStep); // fileName = caseName/timeStep
+    strcat(fileName,"/"); // fileName = caseName/timeStep/
+    strcat(fileName,fieldName); // fileName = caseName/timeStep/fieldName
+
     // ファイルを開く
     fp = fopen(fileName, "r");
     if (fp == NULL) {
@@ -90,7 +101,7 @@ int readData(const char* fileName, int numX, int numY, double* dataArray) {
     // データを読み込む
     for (int y = 0; y < numY; y++) {
         for (int x = 0; x < numX; x++) {
-            fscanf(fp, "%lf", &dataArray[y*numX + x]);
+            fscanf(fp, "%lf", &field[y*numX + x]);
             // printf("%ld\n",dataArray[y*numX + x]);
 
             // if (fscanf(fp, "%lf", &dataArray[y*numX + x]) != 1) {
@@ -138,9 +149,20 @@ int writeDataHeader(char* fileName, double* field, int numX, int numY, char* hea
 // データを書き込む
 // arrayNx, arrayNy : 
 // nx, ny : number of cells in the computational domain.
-int writeData(char* fileName, double* field, int arrayNx, int arrayNy, 
-              char* caseName, char* fieldName, int nx, int ny, int timeStep)
+int writeData(double* field, int numX, int numY, char* caseName, int timeStep, char* fieldName, int nx, int ny)
 {
+    char fileName[1024];
+    char cTimeStep[128]; // store time as string
+    char buffer[1024]; // ヘッダー行を読み込むためのバッファ
+    
+    // construct file name
+    strcpy(fileName,caseName);  // fileName = caseName
+    strcat(fileName,"/");       // fileName = caseName/
+    sprintf(cTimeStep,"%d",timeStep);
+    strcat(fileName,cTimeStep); // fileName = caseName/timeStep
+    strcat(fileName,"/");       // fileName = caseName/timeStep/
+    strcat(fileName,fieldName); // fileName = caseName/timeStep/fieldName
+    
     // 出力
     FILE* fp = fopen(fileName,"w");
 
@@ -154,13 +176,13 @@ int writeData(char* fileName, double* field, int arrayNx, int arrayNy,
     char tmpStr[1024] = ""; 
     // sprintf(tmpStr,"%s sDUdy %dx%d (Nx:%d Ny:%d)",caseName,xn,1,xn,yn);
     fprintf(fp, "%s %s TimeStep:%d Size:%dx%d (Nx:%d Ny:%d)\n",
-            caseName,fieldName,timeStep,arrayNx,arrayNy,nx,ny);
+            caseName,fieldName,timeStep,numX,numY,nx,ny);
 
-    for(int jj=0; jj<arrayNy; jj++)
+    for(int jj=0; jj<numY; jj++)
     {
-        for(int ii=0; ii<arrayNx; ii++)
+        for(int ii=0; ii<numX; ii++)
         {
-            fprintf(fp,"%.8e ",field[ii + jj*arrayNx]);
+            fprintf(fp,"%.8e ",field[ii + jj*numX]);
             // printf("%d %d %lf\n",ii,jj,field[ii + jj*numX]);
         }
         fprintf(fp, "\n");

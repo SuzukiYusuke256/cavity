@@ -21,8 +21,6 @@ int main()
     strcpy(cfgName,caseName); // cfgName = caseName
     strcat(cfgName,"/config"); // cfgName = caseName/config
 
-    printf("%s\n",cfgName);
-
     readConfig(cfgName,&cfg);
 
     // Allocate arrays for cell center velocities
@@ -35,37 +33,41 @@ int main()
     // const int xn = (int)configArray[CFG_NX];
     // const int yn = (int)configArray[CFG_NY];
 
-    const int xn = cfg.nx;
-    const int yn = cfg.ny;
+    const int nx = cfg.nx;
+    const int ny = cfg.ny;
 
-    const double rdx = (double)xn; // 0.25 dx = 1/xn. rdx = 1/(1/xn) = xn;
-    const double rdy = (double)yn;
+    const double rdx = (double)nx; // 0.25 dx = 1/xn. rdx = 1/(1/xn) = xn;
+    const double rdy = (double)ny;
 
-    double* u =         (double*)calloc((xn+3)*(yn+2), sizeof(double));
-    double* v =         (double*)calloc((xn+2)*(yn+3), sizeof(double));
-    double* uCenter =   (double*)calloc((xn+2)*(yn+2), sizeof(double));
-    double* vCenter =   (double*)calloc((xn+2)*(yn+2), sizeof(double));
-    double* dudx =      (double*)calloc(xn*yn, sizeof(double));
-    double* dudy =      (double*)calloc(xn*yn, sizeof(double));
-    double* dvdx =      (double*)calloc(xn*yn, sizeof(double));
-    double* dvdy =      (double*)calloc(xn*yn, sizeof(double));
+    double* u       = (double*)calloc((nx+3)*(ny+2), sizeof(double));
+    double* v       = (double*)calloc((nx+2)*(ny+3), sizeof(double));
+    double* uCenter = (double*)calloc((nx+2)*(ny+2), sizeof(double));
+    double* vCenter = (double*)calloc((nx+2)*(ny+2), sizeof(double));
+    double* dudx    = (double*)calloc(nx*ny, sizeof(double));
+    double* dudy    = (double*)calloc(nx*ny, sizeof(double));
+    double* dvdx    = (double*)calloc(nx*ny, sizeof(double));
+    double* dvdy    = (double*)calloc(nx*ny, sizeof(double));
 
-    double* wallDudy =  (double*)calloc(xn, sizeof(double));
+    double* wallDudy =  (double*)calloc(nx, sizeof(double));
 
     // debug
-    
-    readData("test_02/U",xn+3,yn+2,u);
+
+    readData(u,nx+3,ny+2,caseName,0,"U");
 
     // Calculate velocities at cell centers
-    calcCellCenterVelocity(u, v, uCenter, vCenter, xn, yn);
+    calcCellCenterVelocity(u, v, uCenter, vCenter, nx, ny);
 
     // Calculate velocity gradients at cell centers
-    calcCellCenterVelocityGradients(uCenter, vCenter, dudx, dudy, dvdx, dvdy, xn, yn, rdx, rdy);
-    calcSurfaceVelocityGradients(uCenter,vCenter,wallDudy,xn,yn,rdx,rdy);
+    calcCellCenterVelocityGradients(uCenter, vCenter, dudx, dudy, dvdx, dvdy, nx, ny, rdx, rdy);
+    calcSurfaceVelocityGradients(uCenter,vCenter,wallDudy,nx,ny,rdx,rdy);
 
-    writeData("test_02/vU",uCenter,xn+2,yn+2,caseName,"vU",xn,yn,0);
-    writeData("test_02/vDUdy",dudy,xn,yn,caseName,"vDUdy",xn,yn,0);
-    writeData("test_02/sDudy",wallDudy,xn,1,caseName,"sDudy",xn,yn,0);
+    writeData(uCenter ,nx+2,ny+2,caseName,0,"vU",   nx,ny);
+    writeData(dudy    ,nx  ,ny  ,caseName,0,"vDUdy",nx,ny);
+    writeData(wallDudy,nx  ,1   ,caseName,0,"sDUdy",nx,ny);
+
+    // writeData("test_02/vU",uCenter,xn+2,yn+2,caseName,"vU",xn,yn,0);
+    // writeData("test_02/vDUdy",dudy,xn,yn,caseName,"vDUdy",xn,yn,0);
+    // writeData("test_02/sDudy",wallDudy,xn,1,caseName,"sDudy",xn,yn,0);
 
     // sprintf(tmpStr,"%s vU %dx%d (Nx:%d Ny:%d)",caseName,xn+2,yn+2,xn,yn);
     // writeData("test_02/vU",uCenter,xn+2,yn+2,tmpStr);

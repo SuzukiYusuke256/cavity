@@ -403,7 +403,7 @@ int main()
     char header[1000] = {0}; // header for data output
 
     createDirectoryIfNotExists(resultDir);
-    sprintf(logFileName,"%s/log",resultDir);
+    sprintf(logFileName,"%s/log",caseName);
 
     // 計算時間 計測
     const time_t startTime = time(NULL); // プログラムの開始時間を取得
@@ -427,18 +427,29 @@ int main()
     if (withIC == 1)
     {   
         printf("reading initial conditions...\n");
-        readData("initialConditions/U",xn+3,yn+2,u);
-        readData("initialConditions/V",xn+2,yn+3,v);
-        readData("initialConditions/p",xn+2,yn+2,p);
+        // readData("initialConditions/U",xn+3,yn+2,u);
+        // readData("initialConditions/V",xn+2,yn+3,v);
+        // readData("initialConditions/p",xn+2,yn+2,p);
+    }
+    else{
+
+        // boundary conditions
+        correctBoundaryConditions(u,v,p,xn,yn);
+
+        // output directory for computed data
+        sprintf(timeDirName,"%s/%d",caseName,0);
+        createDirectoryIfNotExists(timeDirName);
+
+        // write initial conditions
+        writeData(u,xn+3,yn+2,caseName,0,"U",xn,yn);
+        writeData(v,xn+2,yn+3,caseName,0,"V",xn,yn);
+        writeData(p,xn+2,yn+2,caseName,0,"p",xn,yn);
     }
 
     // 境界条件
     // y = yn+2 u 速度一定の壁面
     // y = 1, x=1,xn+2 速度0
     // x = 0,xn+3 y = 0,y+3 連続の式を満たすように設定
-
-    // boundary conditions
-    correctBoundaryConditions(u,v,p,xn,yn);
 
     // ログファイルのヘッダを書き込み
     FILE* outputLog = fopen(logFileName,"w");
@@ -455,7 +466,7 @@ int main()
     }
 
     // SMAC法での計算
-    for(int k=0; k<=stepNum; k++)
+    for(int kk=0; kk<=stepNum; kk++)
     {
 
         // 仮速度の計算
@@ -481,52 +492,41 @@ int main()
         int isEnd = 0;
 
         // 最大回数に達する
-        if (k == stepNum)
+        if (kk == stepNum)
         {
             isEnd = 1;
         }
 
-        // 残差が収束判定のしきい値を下回る k=0は残差が0なので除く
-        if (k>0 && residuals[1] < thresh && residuals[3] < thresh) // du, dvで収束を判定
+        // 残差が収束判定のしきい値を下回る kk=0は残差が0なので除く
+        if (kk>0 && residuals[1] < thresh && residuals[3] < thresh) // du, dvで収束を判定
         {
             isEnd = 1; 
         } 
 
-        // 残差を出力 ，一定間隔か，収束条件を満たした場合．
-        if (k % outputInterval == 0 || isEnd == 1)
+        // kk=0のデータは初期条件なので出力しない．
+        if (kk == 0)
+        {
+            continue;
+        }
+
+        // 残差を出力. 一定間隔か，収束条件を満たした場合．
+        if (kk % outputInterval == 0 || isEnd == 1)
         {
             // ログに残差を出力
             elapsedTime = time(NULL) - startTime;
-            writeLog(logFileName,k,dt,elapsedTime,residuals,6); 
+            writeLog(logFileName,kk,dt,elapsedTime,residuals,6); 
             
             // output directory for computed data
-            sprintf(timeDirName,"%s/%d",resultDir,k);
+            sprintf(timeDirName,"%s/%d",caseName,kk);
             createDirectoryIfNotExists(timeDirName);
 
-            // headerの定義
-            sprintf(header,"TimeStep=%d DeltaT=%lf xn=%d yn=%d Re=%.1lf",k,dt,xn,yn,Re);
+            writeData(u,xn+3,yn+2,caseName,kk,"U",xn,yn);
+            writeData(du,xn+3,yn+2,caseName,kk,"dU",xn,yn);
+            writeData(v,xn+2,yn+3,caseName,kk,"V",xn,yn);
+            writeData(dv,xn+2,yn+3,caseName,kk,"dV",xn,yn);
+            writeData(p,xn+2,yn+2,caseName,kk,"p",xn,yn);
+            writeData(dp,xn+2,yn+2,caseName,kk,"dp",xn,yn);
 
-            // 既存のデータを新しい時間ステップのデータで上書き
-            sprintf(tmpDirName,"%s/U",timeDirName);
-            writeData(tmpDirName,u,xn+3,yn+2,caseName,"U",xn,yn,k);
-            // writeDataHeader(tmpDirName,  u,xn+3,yn+2,header);
-            sprintf(tmpDirName,"%s/dU",timeDirName);
-            writeData(tmpDirName,du,xn+3,yn+2,caseName,"dU",xn,yn,k);
-            // writeDataHeader(tmpDirName,du,xn+3,yn+2,header);
-            sprintf(tmpDirName,"%s/V",timeDirName);
-            writeData(tmpDirName,v,xn+2,yn+3,caseName,"V",xn,yn,k);
-            // writeDataHeader(tmpDirName,  v,xn+2,yn+3,header);
-            sprintf(tmpDirName,"%s/dV",timeDirName);
-            writeData(tmpDirName,dv,xn+2,yn+3,caseName,"dV",xn,yn,k);
-            // writeDataHeader(tmpDirName,dv,xn+2,yn+3,header);
-            sprintf(tmpDirName,"%s/p",timeDirName);
-            writeData(tmpDirName,p,xn+2,yn+2,caseName,"p",xn,yn,k);
-            // writeDataHeader(tmpDirName,  p,xn+2,yn+2,header);
-            sprintf(tmpDirName,"%s/dp",timeDirName);
-            writeData(tmpDirName,dp,xn+2,yn+2,caseName,"dp",xn,yn,k);
-            // writeDataHeader(tmpDirName,dp,xn+2,yn+2,header);
-            
-            // writeAll(k,u,v,p,du,dv,dp,xn,yn,timeDirName); // timeDirNameは不使用
         }
 
         // 計算を終了
