@@ -3,6 +3,7 @@
 #include <string.h>
 #include <math.h>
 
+#include "myConst.h"
 #include "myIO.h"
 #include "myPostProcess.h"
 
@@ -10,10 +11,13 @@
 int main()
 {
     // Allocate arrays for cell center velocities
-    char dirName[100] = "";
+    char tmpStr[100] = "";
+    double* configArray = (double*)calloc(configNum,sizeof(double));
 
-    const int xn = 128;
-    const int yn = 128;
+    readConfig("config",configArray,CFG_NUM);
+
+    const int xn = 4;
+    const int yn = 4;
     const double rdx = (double)xn; // 0.25 dx = 1/xn. rdx = 1/(1/xn) = xn;
     const double rdy = (double)yn;
 
@@ -27,14 +31,16 @@ int main()
     double* dvdy =      (double*)calloc(xn*yn, sizeof(double));
 
     double* wallDudy =  (double*)calloc(xn, sizeof(double));
+
     
     // if (uCenter == NULL || vCenter == NULL) {
     //     fprintf(stderr, "Error: Memory allocation failed in calcStaggeredToCellCenterVelocityGradients\n");
     //     return -1;
     // }
 
-    readData("cavity_smac_01-2/26492/U",xn+3,yn+2,u);
-    // readData("cavity_smac_01-2/26492/V",xn+2,yn+3,v);
+    // readData("cavity_smac_01-2/26492/U",xn+3,yn+2,u);
+    readData("test/U",xn+2,yn+3,u);
+    readConfig()
 
     // readData("debug/testU",xn+3,yn+2,u);
 
@@ -46,12 +52,14 @@ int main()
     // Calculate velocities at cell centers
     calcCellCenterVelocity(u, v, uCenter, vCenter, xn, yn);
 
-    printf("%lf\n",rdx);
+    // printf("%lf\n",rdx);
+
     // Calculate velocity gradients at cell centers
     calcCellCenterVelocityGradients(uCenter, vCenter, dudx, dudy, dvdx, dvdy, xn, yn, rdx, rdy);
     calcSurfaceVelocityGradients(uCenter,vCenter,wallDudy,xn,yn,rdx,rdy);
 
-    writeData("debug/testDudy",dudy,xn,yn,"test");
+    sprintf(tmpStr,"%s U %dx%d (Nx:%d Ny:%d)", )
+    writeData("test/testDudy",dudy,xn,yn,"test");
     writeData("debug/testUCenter",uCenter,xn+2,yn+2,"test");
     writeData("debug/testSurfaceDudy",wallDudy,1,xn,"test"); // 縦に出力
     // writeData("cavity_smac_01-2/26492/uCenter",uCenter,xn+2,yn+2,"u_center");

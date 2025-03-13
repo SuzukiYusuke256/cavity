@@ -7,7 +7,7 @@
 
 #include "myIO.h"
 
-int readConfig(const char* configName, int num, double* configArray)
+int readConfig(const char* configName, double* configArray, int num)
 {
     FILE* fp;
     char buffer[1024]; // configの1列目を読み込むためのバッファ
