@@ -20,7 +20,11 @@ OBJS = $(SRCS:.c=.o)
 all: $(TARGET)
 
 # post process
-postProcess: myPostProcess.o myIO.o
+postProcess: myPostProcess.o myIO.o myConst.o
+	$(CC) $(CFLAGS) -o $@ $^
+
+# test
+test: test.o myIO.o myConst.o
 	$(CC) $(CFLAGS) -o $@ $^
 
 # 実行ファイルの生成ルール

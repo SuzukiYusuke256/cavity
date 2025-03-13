@@ -4,6 +4,7 @@
 #include <math.h>
 
 #include "myConst.h"
+#include "config.h"
 #include "myIO.h"
 #include "myPostProcess.h"
 
@@ -16,10 +17,14 @@ int main()
 
     // read config data
     double* configArray = (double*)calloc(CFG_NUM,sizeof(double));
-    readConfig("test_02/config",configArray,CFG_NUM);
+    Config cfg;
+    readConfig("test_02/config",&cfg);
     
-    const int xn = (int)configArray[CFG_NX];
-    const int yn = (int)configArray[CFG_NY];
+    // const int xn = (int)configArray[CFG_NX];
+    // const int yn = (int)configArray[CFG_NY];
+
+    const int xn = cfg.nx;
+    const int yn = cfg.ny;
 
     const double rdx = (double)xn; // 0.25 dx = 1/xn. rdx = 1/(1/xn) = xn;
     const double rdy = (double)yn;
@@ -35,7 +40,6 @@ int main()
 
     double* wallDudy =  (double*)calloc(xn, sizeof(double));
 
-
     // debug
     readData("test_02/U",xn+3,yn+2,u);
 
@@ -46,13 +50,16 @@ int main()
     calcCellCenterVelocityGradients(uCenter, vCenter, dudx, dudy, dvdx, dvdy, xn, yn, rdx, rdy);
     calcSurfaceVelocityGradients(uCenter,vCenter,wallDudy,xn,yn,rdx,rdy);
 
-    sprintf(tmpStr,"%s vU %dx%d (Nx:%d Ny:%d)",caseName,xn+2,yn+2,xn,yn);
-    writeData("test_02/vU",uCenter,xn+2,yn+2,tmpStr);
-    sprintf(tmpStr,"%s vDUdy %dx%d (Nx:%d Ny:%d)",caseName,xn,yn,xn,yn);
-    writeData("test_02/vDUdy",dudy,xn,yn,tmpStr);
-    
-    sprintf(tmpStr,"%s sDUdy %dx%d (Nx:%d Ny:%d)",caseName,xn,1,xn,yn);
-    writeData("test_02/sDudy",wallDudy,xn,1,tmpStr); // 縦に出力
+    writeData("test_02/vU",uCenter,xn+2,yn+2,caseName,"vU",xn,yn,0);
+    writeData("test_02/vDUdy",dudy,xn,yn,caseName,"vDUdy",xn,yn,0);
+    writeData("test_02/sDudy",wallDudy,xn,1,caseName,"sDudy",xn,yn,0);
+
+    // sprintf(tmpStr,"%s vU %dx%d (Nx:%d Ny:%d)",caseName,xn+2,yn+2,xn,yn);
+    // writeData("test_02/vU",uCenter,xn+2,yn+2,tmpStr);
+    // sprintf(tmpStr,"%s vDUdy %dx%d (Nx:%d Ny:%d)",caseName,xn,yn,xn,yn);
+    // writeDataHeader("test_02/vDUdy",dudy,xn,yn,tmpStr);
+    // sprintf(tmpStr,"%s sDUdy %dx%d (Nx:%d Ny:%d)",caseName,xn,1,xn,yn);
+    // writeDataHeader("test_02/sDudy",wallDudy,xn,1,tmpStr);
     
     // Free memory
     free(dudx);
@@ -66,7 +73,6 @@ int main()
     
     return 0;
 }
-
 
 /**
  * Function to interpolate velocities from staggered grid to cell centers

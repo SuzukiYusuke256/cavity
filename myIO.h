@@ -1,9 +1,13 @@
 #ifndef _MY_IO_H_
 #define _MY_IO_H_
 
-int readConfig(const char* configName, double* configArray, int num);
+#include "config.h"
+
+int readConfig(char* configName, Config* config);
 int readData(const char* fileName, int numX, int numY, double* dataArray);
-int writeData(char* fileName, double* field, int numX, int numY, char* header);
+int writeDataHeader(char* fileName, double* field, int numX, int numY, char* header);
+int writeData(char* fileName, double* field, int numX, int numY, char* caseName, char* fieldName, int nx, int ny, int timeStep);
+
 int write(char* filename, int dataNum, int num, char** headings, ...);
 
 // directories

@@ -499,17 +499,17 @@ int main()
 
             // 既存のデータを新しい時間ステップのデータで上書き
             sprintf(tmpDirName,"%s/U",timeDirName);
-            writeData(tmpDirName,  u,xn+3,yn+2,header);
+            writeDataHeader(tmpDirName,  u,xn+3,yn+2,header);
             sprintf(tmpDirName,"%s/dU",timeDirName);
-            writeData(tmpDirName,du,xn+3,yn+2,header);
+            writeDataHeader(tmpDirName,du,xn+3,yn+2,header);
             sprintf(tmpDirName,"%s/V",timeDirName);
-            writeData(tmpDirName,  v,xn+2,yn+3,header);
+            writeDataHeader(tmpDirName,  v,xn+2,yn+3,header);
             sprintf(tmpDirName,"%s/dV",timeDirName);
-            writeData(tmpDirName,dv,xn+2,yn+3,header);
+            writeDataHeader(tmpDirName,dv,xn+2,yn+3,header);
             sprintf(tmpDirName,"%s/p",timeDirName);
-            writeData(tmpDirName,  p,xn+2,yn+2,header);
+            writeDataHeader(tmpDirName,  p,xn+2,yn+2,header);
             sprintf(tmpDirName,"%s/dp",timeDirName);
-            writeData(tmpDirName,dp,xn+2,yn+2,header);
+            writeDataHeader(tmpDirName,dp,xn+2,yn+2,header);
             
             // writeAll(k,u,v,p,du,dv,dp,xn,yn,timeDirName); // timeDirNameは不使用
         }

@@ -1,16 +1,21 @@
 #include <stdio.h>
 #include <stdarg.h> 
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <errno.h>
 
 #include "myIO.h"
+#include "myConst.h"
 
-int readConfig(const char* configName, double* configArray, int num)
+int readConfig(char* configName, Config* config)
 {
     FILE* fp;
-    char buffer[1024]; // configの1列目を読み込むためのバッファ
+    // char buffer[1024]; // configの1列目を読み込むためのバッファ
+    char line[1024];
+    char *token;
+    char *valueStrings[CFG_NUM];  // 文字列として保存する配列
     
     // ファイルを開く
     fp = fopen(configName, "r");
@@ -18,22 +23,37 @@ int readConfig(const char* configName, double* configArray, int num)
         fprintf(stderr, "read config\nError: Failed to open %s\n", configName);
         return -1;
     }
-    
-    // 
-    fscanf(fp, "%s", buffer); // configのcaseName (読み飛ばす)
-    fscanf(fp, "%s", buffer); // configのcaseName (読み飛ばす)
 
-    // printf("%s\n",buffer);
+    int count = 0;
+    // store setting as string
+    while (fgets(line, 1024, fp) != NULL && count < CFG_NUM) {
+        // 改行文字を削除
+        line[strcspn(line, "\n")] = '\0';
+        
+        // 最初のトークン（パラメータ名）を取得
+        token = strtok(line, " \t");
+        if (token == NULL) continue; // 空行をスキップ
+        
+        // 2番目のトークン（値）を取得
+        token = strtok(NULL, " \t");
+        if (token == NULL) continue; // 2番目のトークンがない行をスキップ
+        
+        // 値を文字列配列にコピー
+        valueStrings[count] = strdup(token);  // メモリ割り当てをしてコピー
 
-    for (int ii = 0; ii < num; ii++) {
-        fscanf(fp, "%s", buffer); // configの設定項目 (読み飛ばす)
-        if (fscanf(fp, "%lf", &configArray[ii]) != 1) {
-            fprintf(stderr, "read config\nError: Failed to read config data. Location: row %d\n", ii);
-            fclose(fp);
-            return -1;
-        }
-        // printf("%lf\n",configArray[ii]);
+        count++;
     }
+
+    // copy to the struct
+    strcpy(config->caseName,valueStrings[CFG_CASENAME]);
+    config->stepNum              = atoi(valueStrings[CFG_STEP_NUM]);
+    config->outputInterval       = atoi(valueStrings[CFG_OUTPUT_INT]);
+    config->deltaT               = atof(valueStrings[CFG_DELTA_T]);
+    config->nx                   = atoi(valueStrings[CFG_NX]);
+    config->ny                   = atoi(valueStrings[CFG_NY]);
+    config->re                   = atof(valueStrings[CFG_RE]);
+    config->convergenceThreshold = atof(valueStrings[CFG_CONV_THRESH]);
+    config->withInitialCondition = atoi(valueStrings[CFG_WITH_INIT]);
     
     // ファイルを閉じる
     fclose(fp);
@@ -87,7 +107,7 @@ int readData(const char* fileName, int numX, int numY, double* dataArray) {
 }
 
 // データを書き込む
-int writeData(char* fileName, double* field, int numX, int numY, char* header)
+int writeDataHeader(char* fileName, double* field, int numX, int numY, char* header)
 {
     // 出力
     FILE* fp = fopen(fileName,"w");
@@ -106,6 +126,41 @@ int writeData(char* fileName, double* field, int numX, int numY, char* header)
         for(int ii=0; ii<numX; ii++)
         {
             fprintf(fp,"%.8e ",field[ii + jj*numX]);
+            // printf("%d %d %lf\n",ii,jj,field[ii + jj*numX]);
+        }
+        fprintf(fp, "\n");
+    }
+
+    fclose(fp);
+    return 0;
+}
+
+// データを書き込む
+// arrayNx, arrayNy : 
+// nx, ny : number of cells in the computational domain.
+int writeData(char* fileName, double* field, int arrayNx, int arrayNy, 
+              char* caseName, char* fieldName, int nx, int ny, int timeStep)
+{
+    // 出力
+    FILE* fp = fopen(fileName,"w");
+
+    // ファイルが正しく開けたかを確認
+    if (fp == NULL) {
+        printf("Failed to open file\n");
+        return -1;
+    }
+
+    // ファイルに文字列を書き込む
+    char tmpStr[1024] = ""; 
+    // sprintf(tmpStr,"%s sDUdy %dx%d (Nx:%d Ny:%d)",caseName,xn,1,xn,yn);
+    fprintf(fp, "%s %s TimeStep:%d Size:%dx%d (Nx:%d Ny:%d)\n",
+            caseName,fieldName,timeStep,arrayNx,arrayNy,nx,ny);
+
+    for(int jj=0; jj<arrayNy; jj++)
+    {
+        for(int ii=0; ii<arrayNx; ii++)
+        {
+            fprintf(fp,"%.8e ",field[ii + jj*arrayNx]);
             // printf("%d %d %lf\n",ii,jj,field[ii + jj*numX]);
         }
         fprintf(fp, "\n");
