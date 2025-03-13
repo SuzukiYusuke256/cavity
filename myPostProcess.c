@@ -12,11 +12,11 @@ int main()
 {
     // Allocate arrays for cell center velocities
     char tmpStr[100] = "";
-    const char* caseName = "test";
+    const char* caseName = "test_02";
 
     // read config data
     double* configArray = (double*)calloc(CFG_NUM,sizeof(double));
-    readConfig("test/config",configArray,CFG_NUM);
+    readConfig("test_02/config",configArray,CFG_NUM);
     
     const int xn = (int)configArray[CFG_NX];
     const int yn = (int)configArray[CFG_NY];
@@ -35,33 +35,24 @@ int main()
 
     double* wallDudy =  (double*)calloc(xn, sizeof(double));
 
-    readData("test/U",xn+3,yn+2,u);
 
-    // readData("debug/testU",xn+3,yn+2,u);
-
-    // for (int i=0; i<xn+3; i++)
-    // {
-    //     printf("%lf\n",u[i + 2*(xn+3)]);
-    // }
+    // debug
+    readData("test_02/U",xn+3,yn+2,u);
 
     // Calculate velocities at cell centers
     calcCellCenterVelocity(u, v, uCenter, vCenter, xn, yn);
-
-    // printf("%lf\n",rdx);
 
     // Calculate velocity gradients at cell centers
     calcCellCenterVelocityGradients(uCenter, vCenter, dudx, dudy, dvdx, dvdy, xn, yn, rdx, rdy);
     calcSurfaceVelocityGradients(uCenter,vCenter,wallDudy,xn,yn,rdx,rdy);
 
     sprintf(tmpStr,"%s vU %dx%d (Nx:%d Ny:%d)",caseName,xn+2,yn+2,xn,yn);
-    writeData("test/vU",uCenter,xn+2,yn+2,tmpStr);
+    writeData("test_02/vU",uCenter,xn+2,yn+2,tmpStr);
     sprintf(tmpStr,"%s vDUdy %dx%d (Nx:%d Ny:%d)",caseName,xn,yn,xn,yn);
-    writeData("test/vDUdy",dudy,xn,yn,tmpStr);
+    writeData("test_02/vDUdy",dudy,xn,yn,tmpStr);
     
     sprintf(tmpStr,"%s sDUdy %dx%d (Nx:%d Ny:%d)",caseName,xn,1,xn,yn);
-    writeData("test/sDudy",wallDudy,xn,1,tmpStr); // 縦に出力
-
-    // writeData("cavity_smac_01-2/26492/uCenter",uCenter,xn+2,yn+2,"u_center");
+    writeData("test_02/sDudy",wallDudy,xn,1,tmpStr); // 縦に出力
     
     // Free memory
     free(dudx);

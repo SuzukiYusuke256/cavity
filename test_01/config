@@ -1,4 +1,4 @@
-caseName                test
+caseName                test_01
 stepNum                 100
 outputInterval          10
 DeltaT                  0.001
