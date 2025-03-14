@@ -1,0 +1,9 @@
+caseName                tempCase
+stepNum                 100000
+outputInterval          1000
+DeltaT                  0.001
+Nx                      128
+Ny                      128
+Re                      100
+withInitialCondition    0
+covergenceThreshold     1e-16
