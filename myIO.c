@@ -69,7 +69,7 @@ int readConfig(char* configName, Config* config)
  * @param dataArray  読み込んだデータを格納する配列（サイズはnumX*numY）
  * @return           成功した場合は0、失敗した場合は-1を返す
  */
-int readData (double* field, int numX, int numY, char* caseName, int timeStep, char* fieldName) 
+int readData (double* field, int numX, int numY, const char* caseName, int timeStep, char* fieldName) 
 {
     FILE* fp;
     char fileName[1024];
@@ -149,7 +149,7 @@ int writeDataHeader(char* fileName, double* field, int numX, int numY, char* hea
 // データを書き込む
 // arrayNx, arrayNy : 
 // nx, ny : number of cells in the computational domain.
-int writeData(double* field, int numX, int numY, char* caseName, int timeStep, char* fieldName, int nx, int ny)
+int writeData(double* field, int numX, int numY, const char* caseName, int timeStep, char* fieldName, int nx, int ny)
 {
     char fileName[1024];
     char cTimeStep[128]; // store time as string

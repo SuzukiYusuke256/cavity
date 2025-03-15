@@ -14,7 +14,7 @@ int main()
     // read config data
     // double* configArray = (double*)calloc(CFG_NUM,sizeof(double));
 
-    const char* caseName = "test_02";
+    const char* caseName = "test_03";
     
     Config cfg;
     char cfgName[128] = "";
@@ -23,15 +23,12 @@ int main()
 
     readConfig(cfgName,&cfg);
 
-    // Allocate arrays for cell center velocities
-    char tmpStr[100] = "";
-
-    // const char* caseName = "test_02";
-    // Config cfg;
-    // readConfig("test_02/config",&cfg);
-    
-    // const int xn = (int)configArray[CFG_NX];
-    // const int yn = (int)configArray[CFG_NY];
+    // if the case name does not match the config file, return error
+    if (strcmp(caseName, cfg.caseName) != 0) 
+    {
+        fprintf(stderr, "Error: caseName does not match cfg.caseName\n");
+        return -1;
+    }
 
     const int nx = cfg.nx;
     const int ny = cfg.ny;
@@ -39,20 +36,24 @@ int main()
     const double rdx = (double)nx; // 0.25 dx = 1/xn. rdx = 1/(1/xn) = xn;
     const double rdy = (double)ny;
 
-    double* u       = (double*)calloc((nx+3)*(ny+2), sizeof(double));
-    double* v       = (double*)calloc((nx+2)*(ny+3), sizeof(double));
-    double* uCenter = (double*)calloc((nx+2)*(ny+2), sizeof(double));
-    double* vCenter = (double*)calloc((nx+2)*(ny+2), sizeof(double));
-    double* dudx    = (double*)calloc(nx*ny, sizeof(double));
-    double* dudy    = (double*)calloc(nx*ny, sizeof(double));
-    double* dvdx    = (double*)calloc(nx*ny, sizeof(double));
-    double* dvdy    = (double*)calloc(nx*ny, sizeof(double));
+    double* u          = (double*)calloc((nx+3)*(ny+2), sizeof(double));
+    double* v          = (double*)calloc((nx+2)*(ny+3), sizeof(double));
+    double* uCenter    = (double*)calloc((nx+2)*(ny+2), sizeof(double));
+    double* vCenter    = (double*)calloc((nx+2)*(ny+2), sizeof(double));
+    double* dudx       = (double*)calloc(nx*ny, sizeof(double));
+    double* dudy       = (double*)calloc(nx*ny, sizeof(double));
+    double* dvdx       = (double*)calloc(nx*ny, sizeof(double));
+    double* dvdy       = (double*)calloc(nx*ny, sizeof(double));
+    double* wallDudy   = (double*)calloc(nx, sizeof(double));
 
-    double* wallDudy =  (double*)calloc(nx, sizeof(double));
+    double* dissip     = (double*)calloc(nx*ny, sizeof(double));
+    double totalDissip = 0.0;
+
+    int timeStep = 100;
 
     // debug
 
-    readData(u,nx+3,ny+2,caseName,0,"U");
+    readData(u,nx+3,ny+2,caseName,timeStep,"U");
 
     // Calculate velocities at cell centers
     calcCellCenterVelocity(u, v, uCenter, vCenter, nx, ny);
@@ -60,21 +61,16 @@ int main()
     // Calculate velocity gradients at cell centers
     calcCellCenterVelocityGradients(uCenter, vCenter, dudx, dudy, dvdx, dvdy, nx, ny, rdx, rdy);
     calcSurfaceVelocityGradients(uCenter,vCenter,wallDudy,nx,ny,rdx,rdy);
+    calcViscousDissipation(0.01, dudx, dudy, dvdx, dvdy, dissip, &totalDissip, nx, ny);
 
-    writeData(uCenter ,nx+2,ny+2,caseName,0,"vU",   nx,ny);
-    writeData(dudy    ,nx  ,ny  ,caseName,0,"vDUdy",nx,ny);
-    writeData(wallDudy,nx  ,1   ,caseName,0,"sDUdy",nx,ny);
+    writeData(uCenter, nx+2,ny+2,caseName,timeStep,"vU",           nx,ny);
+    writeData(dudy,    nx,  ny,  caseName,timeStep,"vDUdy",        nx,ny);
+    writeData(wallDudy,nx,  1,   caseName,timeStep,"sDUdy",        nx,ny);
+    writeData(dissip,  nx,  ny,  caseName,timeStep,"viscousDissip",nx,ny);
 
-    // writeData("test_02/vU",uCenter,xn+2,yn+2,caseName,"vU",xn,yn,0);
-    // writeData("test_02/vDUdy",dudy,xn,yn,caseName,"vDUdy",xn,yn,0);
-    // writeData("test_02/sDudy",wallDudy,xn,1,caseName,"sDudy",xn,yn,0);
-
-    // sprintf(tmpStr,"%s vU %dx%d (Nx:%d Ny:%d)",caseName,xn+2,yn+2,xn,yn);
-    // writeData("test_02/vU",uCenter,xn+2,yn+2,tmpStr);
-    // sprintf(tmpStr,"%s vDUdy %dx%d (Nx:%d Ny:%d)",caseName,xn,yn,xn,yn);
-    // writeDataHeader("test_02/vDUdy",dudy,xn,yn,tmpStr);
-    // sprintf(tmpStr,"%s sDUdy %dx%d (Nx:%d Ny:%d)",caseName,xn,1,xn,yn);
-    // writeDataHeader("test_02/sDudy",wallDudy,xn,1,tmpStr);
+    printf("Total viscous dissipation: %lf\n", totalDissip);
+    // writeData(totalDissip, 1,1,  caseName,0,"totalViscousDissip",nx,ny);
+    
     
     // Free memory
     free(dudx);
@@ -85,6 +81,8 @@ int main()
     free(v);
     free(uCenter);
     free(vCenter);
+    free(wallDudy);
+    free(dissip);
     
     return 0;
 }
@@ -259,4 +257,52 @@ int calcStaggeredToCellCenterVelocityGradients(double* u, double* v,
     free(vCenter);
     
     return 0;
+}
+
+/**
+ * Function to calculate viscous dissipation at cell centers
+ * 
+ * @param nu          kinematic viscosity
+ * @param dudx        array of ∂u/∂x at cell centers
+ * @param dudy        array of ∂u/∂y at cell centers
+ * @param dvdx        array of ∂v/∂x at cell centers
+ * @param dvdy        array of ∂v/∂y at cell centers
+ * @param dissip      array to store viscous dissipation
+ * @param totalDissip pointer to store total dissipation
+ * @param xn          number of cells in x-direction
+ * @param yn          number of cells in y-direction
+ * @return            0 on success, -1 on failure
+ */
+int calcViscousDissipation(double nu, double* dudx, double* dudy, double* dvdx, double* dvdy, double* dissip, double* totalDissip, int xn, int yn) {
+
+    if (dudx == NULL || dudy == NULL || dvdx == NULL || dvdy == NULL || dissip == NULL) {
+        fprintf(stderr, "Error: Null pointer provided to calcViscousDissipation\n");
+        return -1;
+    }
+
+    // Initialize total dissipation
+    *totalDissip = 0.0;
+
+    // Calculate viscous dissipation for each cell
+    for (int jj = 0; jj < yn; jj++) {
+        for (int ii = 0; ii < xn; ii++) {
+
+            int idx = ii + jj*xn;
+
+            // Calculate squared terms
+            double dudx2 = dudx[idx] * dudx[idx];  // tensor[0]^2
+            double dvdx2 = dvdx[idx] * dvdx[idx];  // tensor[1]^2
+            double dudy2 = dudy[idx] * dudy[idx];  // tensor[2]^2
+            double dvdy2 = dvdy[idx] * dvdy[idx];  // tensor[3]^2
+
+            // Calculate cross terms
+            double cross_term = dvdx[idx] * dudy[idx];  // tensor[1]*tensor[3]
+
+            // Calculate dissipation using simplified formula
+            dissip[idx] = 2.0*dudx2 + dvdx2 + dudy2 + 2.0*dvdy2 + 2.0 * cross_term;
+            *totalDissip += dissip[idx];
+        }
+    }
+
+return 0;
 }

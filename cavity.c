@@ -413,9 +413,9 @@ int main()
     double dy = 1.0 / (double)yn;
     
     // field initialization
-    double* u = (double*)calloc((xn+3)*(yn+2),sizeof(double));
-    double* v = (double*)calloc((xn+2)*(yn+3),sizeof(double));
-    double* p = (double*)calloc((xn+2)*(yn+2),sizeof(double));
+    double* u  = (double*)calloc((xn+3)*(yn+2),sizeof(double));
+    double* v  = (double*)calloc((xn+2)*(yn+3),sizeof(double));
+    double* p  = (double*)calloc((xn+2)*(yn+2),sizeof(double));
     double* du = (double*)calloc((xn+3)*(yn+2),sizeof(double));
     double* dv = (double*)calloc((xn+2)*(yn+3),sizeof(double));
     double* dp = (double*)calloc((xn+2)*(yn+2),sizeof(double));
