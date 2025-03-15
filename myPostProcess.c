@@ -11,11 +11,11 @@
 // calculate gradient
 int main()
 {
-    // read config data
-    // double* configArray = (double*)calloc(CFG_NUM,sizeof(double));
-
-    const char* caseName = "test_03";
+    // const char* caseName = "cavity_smac_01-2";
+    const char* caseName = "test_01";
+    int timeStep         = 0;
     
+    // read config
     Config cfg;
     char cfgName[128] = "";
     strcpy(cfgName,caseName); // cfgName = caseName
@@ -49,11 +49,8 @@ int main()
     double* dissip     = (double*)calloc(nx*ny, sizeof(double));
     double totalDissip = 0.0;
 
-    int timeStep = 100;
-
-    // debug
-
     readData(u,nx+3,ny+2,caseName,timeStep,"U");
+    readData(v,nx+2,ny+3,caseName,timeStep,"V");
 
     // Calculate velocities at cell centers
     calcCellCenterVelocity(u, v, uCenter, vCenter, nx, ny);
@@ -63,8 +60,12 @@ int main()
     calcSurfaceVelocityGradients(uCenter,vCenter,wallDudy,nx,ny,rdx,rdy);
     calcViscousDissipation(0.01, dudx, dudy, dvdx, dvdy, dissip, &totalDissip, nx, ny);
 
-    writeData(uCenter, nx+2,ny+2,caseName,timeStep,"vU",           nx,ny);
+    writeData(uCenter, nx+2,ny+2,caseName,timeStep,"vU",           nx,ny); // U at the cell center
+    writeData(vCenter, nx+2,ny+2,caseName,timeStep,"vV",           nx,ny); // V at the cell center
+    writeData(dudx,    nx,  ny,  caseName,timeStep,"vDUdx",        nx,ny);
     writeData(dudy,    nx,  ny,  caseName,timeStep,"vDUdy",        nx,ny);
+    writeData(dvdx,    nx,  ny,  caseName,timeStep,"vDVdx",        nx,ny);
+    writeData(dvdy,    nx,  ny,  caseName,timeStep,"vDVdy",        nx,ny);
     writeData(wallDudy,nx,  1,   caseName,timeStep,"sDUdy",        nx,ny);
     writeData(dissip,  nx,  ny,  caseName,timeStep,"viscousDissip",nx,ny);
 
@@ -269,25 +270,30 @@ int calcStaggeredToCellCenterVelocityGradients(double* u, double* v,
  * @param dvdy        array of ∂v/∂y at cell centers
  * @param dissip      array to store viscous dissipation
  * @param totalDissip pointer to store total dissipation
- * @param xn          number of cells in x-direction
- * @param yn          number of cells in y-direction
+ * @param nx          number of cells in x-direction
+ * @param ny          number of cells in y-direction
  * @return            0 on success, -1 on failure
  */
-int calcViscousDissipation(double nu, double* dudx, double* dudy, double* dvdx, double* dvdy, double* dissip, double* totalDissip, int xn, int yn) {
+int calcViscousDissipation(double nu, double* dudx, double* dudy, double* dvdx, double* dvdy, double* dissip, double* totalDissip, int nx, int ny) {
 
     if (dudx == NULL || dudy == NULL || dvdx == NULL || dvdy == NULL || dissip == NULL) {
         fprintf(stderr, "Error: Null pointer provided to calcViscousDissipation\n");
         return -1;
     }
 
+    // Volume of each cell
+    double dV = 1.0 / (double)(nx*ny); 
+
+    printf("dV: %lf\n",dV);
+
     // Initialize total dissipation
     *totalDissip = 0.0;
 
     // Calculate viscous dissipation for each cell
-    for (int jj = 0; jj < yn; jj++) {
-        for (int ii = 0; ii < xn; ii++) {
+    for (int jj = 0; jj < ny; jj++) {
+        for (int ii = 0; ii < nx; ii++) {
 
-            int idx = ii + jj*xn;
+            int idx = ii + jj*nx;
 
             // Calculate squared terms
             double dudx2 = dudx[idx] * dudx[idx];  // tensor[0]^2
@@ -299,7 +305,7 @@ int calcViscousDissipation(double nu, double* dudx, double* dudy, double* dvdx, 
             double cross_term = dvdx[idx] * dudy[idx];  // tensor[1]*tensor[3]
 
             // Calculate dissipation using simplified formula
-            dissip[idx] = 2.0*dudx2 + dvdx2 + dudy2 + 2.0*dvdy2 + 2.0 * cross_term;
+            dissip[idx] = nu * dV * (2.0*dudx2 + dvdx2 + dudy2 + 2.0*dvdy2 + 2.0 * cross_term);
             *totalDissip += dissip[idx];
         }
     }
