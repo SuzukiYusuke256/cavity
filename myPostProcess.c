@@ -12,7 +12,9 @@
 int main()
 {
     // const char* caseName = "cavity_smac_01-2";
-    const char* caseName = "test_01";
+    // int timeStep         = 0;
+
+    const char* caseName = "test_02";
     int timeStep         = 0;
     
     // read config
@@ -155,9 +157,10 @@ int calcCellCenterVelocityGradients(double* uCenter, double* vCenter,
         for (int ii = 1; ii <= xn; ii++) {
 
             // Cell index (internal domain)
+            // the size of uCenter is (xn+2 x yn+2) including ghost cells
             int idx = (ii-1) + (jj-1)*xn;
             
-            // Calculate gradients using central difference method with inverse multiplication
+            // Calculate gradients using central difference method
             dudx[idx] = (uCenter[(ii+1) + jj*(xn+2)] - uCenter[(ii-1) + jj*(xn+2)]) * 0.5 * rdx;
             dudy[idx] = (uCenter[ii + (jj+1)*(xn+2)] - uCenter[ii + (jj-1)*(xn+2)]) * 0.5 * rdy;
             dvdx[idx] = (vCenter[(ii+1) + jj*(xn+2)] - vCenter[(ii-1) + jj*(xn+2)]) * 0.5 * rdx;
@@ -305,7 +308,7 @@ int calcViscousDissipation(double nu, double* dudx, double* dudy, double* dvdx, 
             double cross_term = dvdx[idx] * dudy[idx];  // tensor[1]*tensor[3]
 
             // Calculate dissipation using simplified formula
-            dissip[idx] = nu * dV * (2.0*dudx2 + dvdx2 + dudy2 + 2.0*dvdy2 + 2.0 * cross_term);
+            dissip[idx] = nu * dV *(2.0*dudx2 + dvdx2 + dudy2 + 2.0*dvdy2 + 2.0*cross_term);
             *totalDissip += dissip[idx];
         }
     }
