@@ -368,11 +368,17 @@ void calcResidual(double* field, int startIndexX, int startIndexY, int numX, int
     res[resStartIndex+1] = tmpErr/(numX*numY);
 }
 
-int main()
+int main(int argc, char* argv[])
 {
-    // read computational conditions
-    // const int configNum = 8;
-    const char* caseName = "test_03";
+    // コマンドライン引数のチェック
+    if (argc != 2) {
+        printf("Usage: %s <caseName>\n", argv[0]);
+        return 1;
+    }
+
+    // コマンドライン引数からcaseNameを取得
+    const char* caseName = argv[1];
+    // const char* caseName = "test_03";
     
     Config cfg;
     char cfgName[128] = "";
@@ -380,8 +386,12 @@ int main()
     strcat(cfgName,"/config"); // cfgName = caseName/config
     readConfig(cfgName,&cfg);
 
-    // double* configArray = (double*)calloc(configNum,sizeof(double));
-    // readConfig("config",configArray,configNum);
+    // if the case name does not match the config file, return error
+    if (strcmp(caseName, cfg.caseName) != 0) 
+    {
+        fprintf(stderr, "Error: caseName does not match cfg.caseName\n");
+        return -1;
+    }
 
     const int stepNum           = cfg.stepNum;
     const int outputInterval    = cfg.outputInterval;
@@ -554,7 +564,7 @@ int main()
             writeData(dp,xn+2,yn+2,caseName,kk,"dp",xn,yn);
 
             // 計算終了を表示
-            printf("calculation finished\n");
+            printf("%s finished\n",caseName);
 
             break;
         }
