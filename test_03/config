@@ -1,6 +1,6 @@
 caseName                test_03
-stepNum                 100
-outputInterval          10
+stepNum                 1000
+outputInterval          100
 DeltaT                  0.001
 Nx                      16
 Ny                      16

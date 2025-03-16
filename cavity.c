@@ -392,6 +392,8 @@ int main()
     const int withIC            = cfg.withInitialCondition;
     const double thresh         = cfg.convergenceThreshold;
 
+    const int logOutputInterval = outputInterval/10; // ログの出力間隔
+
     // 圧力の基準セル．この格子点の圧力を0とする．
     const int pRefID            = 1*(xn+2) + 1; // i = 1, j = 1 (0始まり)  
     
@@ -402,7 +404,7 @@ int main()
     char tmpDirName[100] = {0}; 
     char header[1000] = {0}; // header for data output
 
-    createDirectoryIfNotExists(resultDir);
+    // createDirectoryIfNotExists(resultDir);
     sprintf(logFileName,"%s/log",caseName);
 
     // 計算時間 計測
@@ -509,8 +511,32 @@ int main()
             continue;
         }
 
-        // 残差を出力. 一定間隔か，収束条件を満たした場合．
-        if (kk % outputInterval == 0 || isEnd == 1)
+        // 残差をログに出力．計算終了時は別でログを出力するため，終了条件を満たしていない場合のみ出力
+        if (kk % logOutputInterval == 0 && isEnd == 0)
+        {
+            // ログに残差を出力
+            elapsedTime = time(NULL) - startTime;
+            writeLog(logFileName,kk,dt,elapsedTime,residuals,6); 
+        }
+
+        // 残差を出力. 一定間隔かつ収束条件を満たしていない場合．
+        if (kk % outputInterval == 0 && isEnd == 0)
+        {
+            // output directory for computed data
+            sprintf(timeDirName,"%s/%d",caseName,kk);
+            createDirectoryIfNotExists(timeDirName);
+
+            writeData(u,xn+3,yn+2,caseName,kk,"U",xn,yn);
+            writeData(du,xn+3,yn+2,caseName,kk,"dU",xn,yn);
+            writeData(v,xn+2,yn+3,caseName,kk,"V",xn,yn);
+            writeData(dv,xn+2,yn+3,caseName,kk,"dV",xn,yn);
+            writeData(p,xn+2,yn+2,caseName,kk,"p",xn,yn);
+            writeData(dp,xn+2,yn+2,caseName,kk,"dp",xn,yn);
+
+        }
+
+        // 収束条件を満たした場合，計算を終了
+        if (isEnd == 1)
         {
             // ログに残差を出力
             elapsedTime = time(NULL) - startTime;
@@ -527,11 +553,9 @@ int main()
             writeData(p,xn+2,yn+2,caseName,kk,"p",xn,yn);
             writeData(dp,xn+2,yn+2,caseName,kk,"dp",xn,yn);
 
-        }
+            // 計算終了を表示
+            printf("calculation finished\n");
 
-        // 計算を終了
-        if (isEnd == 1)
-        {
             break;
         }
     }
