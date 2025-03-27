@@ -12,6 +12,7 @@ typedef struct Config {
     double re;                 // Reynolds number
     int withInitialCondition;  // Flag for initial condition (0 or 1)
     double convergenceThreshold; // Threshold for convergence check
+    int writePrecision;        // Precision for output data
 } Config;
 
-#endif // CONFIG_H
+#endif 

@@ -13,5 +13,6 @@ extern const int CFG_NY;
 extern const int CFG_RE;
 extern const int CFG_WITH_INIT;
 extern const int CFG_CONV_THRESH;
+extern const int CFG_WRITE_PREC;
 
 #endif

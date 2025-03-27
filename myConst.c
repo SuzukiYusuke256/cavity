@@ -1,5 +1,5 @@
 // define constant 
-const int CFG_NUM = 9;
+const int CFG_NUM = 10;
 
 const int CFG_CASENAME      = 0;
 const int CFG_STEP_NUM      = 1;
@@ -10,3 +10,4 @@ const int CFG_NY            = 5;
 const int CFG_RE            = 6;
 const int CFG_WITH_INIT     = 7;
 const int CFG_CONV_THRESH   = 8;
+const int CFG_WRITE_PREC    = 9;

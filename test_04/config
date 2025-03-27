@@ -1,0 +1,10 @@
+caseName                test_04
+stepNum                 1000
+outputInterval          100
+DeltaT                  0.0001
+Nx                      16
+Ny                      16
+Re                      100
+withInitialCondition    0
+covergenceThreshold     1e-16
+writePrecision          12

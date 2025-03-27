@@ -52,6 +52,7 @@ int main(int argc, char* argv[])
     const double Re             = cfg.re;
     const int withIC            = cfg.withInitialCondition;
     const double thresh         = cfg.convergenceThreshold;
+    const int writePrec         = cfg.writePrecision; // precision for output data
 
     const int logOutputInterval = outputInterval/10; // ログの出力間隔
 
@@ -120,9 +121,9 @@ int main(int argc, char* argv[])
         createDirectoryIfNotExists(timeDirName);
 
         // write initial conditions
-        writeData(u,xn+3,yn+2,caseName,0,"U",xn,yn);
-        writeData(v,xn+2,yn+3,caseName,0,"V",xn,yn);
-        writeData(p,xn+2,yn+2,caseName,0,"p",xn,yn);
+        writeData(u,xn+3,yn+2,caseName,0,"U",xn,yn,writePrec);
+        writeData(v,xn+2,yn+3,caseName,0,"V",xn,yn,writePrec);
+        writeData(p,xn+2,yn+2,caseName,0,"p",xn,yn,writePrec);
     }
 
     // ログファイルのヘッダを書き込み
@@ -198,12 +199,12 @@ int main(int argc, char* argv[])
             sprintf(timeDirName,"%s/%d",caseName,kk);
             createDirectoryIfNotExists(timeDirName);
 
-            writeData(u,xn+3,yn+2,caseName,kk,"U",xn,yn);
-            writeData(du,xn+3,yn+2,caseName,kk,"dU",xn,yn);
-            writeData(v,xn+2,yn+3,caseName,kk,"V",xn,yn);
-            writeData(dv,xn+2,yn+3,caseName,kk,"dV",xn,yn);
-            writeData(p,xn+2,yn+2,caseName,kk,"p",xn,yn);
-            writeData(dp,xn+2,yn+2,caseName,kk,"dp",xn,yn);
+            writeData(u,xn+3,yn+2,caseName,kk,"U",xn,yn,writePrec);
+            writeData(du,xn+3,yn+2,caseName,kk,"dU",xn,yn,writePrec);
+            writeData(v,xn+2,yn+3,caseName,kk,"V",xn,yn,writePrec);
+            writeData(dv,xn+2,yn+3,caseName,kk,"dV",xn,yn,writePrec);
+            writeData(p,xn+2,yn+2,caseName,kk,"p",xn,yn,writePrec);
+            writeData(dp,xn+2,yn+2,caseName,kk,"dp",xn,yn,writePrec);
 
         }
 
@@ -218,12 +219,12 @@ int main(int argc, char* argv[])
             sprintf(timeDirName,"%s/%d",caseName,kk);
             createDirectoryIfNotExists(timeDirName);
 
-            writeData(u,xn+3,yn+2,caseName,kk,"U",xn,yn);
-            writeData(du,xn+3,yn+2,caseName,kk,"dU",xn,yn);
-            writeData(v,xn+2,yn+3,caseName,kk,"V",xn,yn);
-            writeData(dv,xn+2,yn+3,caseName,kk,"dV",xn,yn);
-            writeData(p,xn+2,yn+2,caseName,kk,"p",xn,yn);
-            writeData(dp,xn+2,yn+2,caseName,kk,"dp",xn,yn);
+            writeData(u,xn+3,yn+2,caseName,kk,"U",xn,yn,writePrec);
+            writeData(du,xn+3,yn+2,caseName,kk,"dU",xn,yn,writePrec);
+            writeData(v,xn+2,yn+3,caseName,kk,"V",xn,yn,writePrec);
+            writeData(dv,xn+2,yn+3,caseName,kk,"dV",xn,yn,writePrec);
+            writeData(p,xn+2,yn+2,caseName,kk,"p",xn,yn,writePrec);
+            writeData(dp,xn+2,yn+2,caseName,kk,"dp",xn,yn,writePrec);
 
             // 計算終了を表示
             printf("%s finished\n",caseName);

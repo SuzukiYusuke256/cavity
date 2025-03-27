@@ -54,6 +54,7 @@ int readConfig(char* configName, Config* config)
     config->re                   = atof(valueStrings[CFG_RE]);
     config->convergenceThreshold = atof(valueStrings[CFG_CONV_THRESH]);
     config->withInitialCondition = atoi(valueStrings[CFG_WITH_INIT]);
+    config->writePrecision       = atoi(valueStrings[CFG_WRITE_PREC]);
     
     // ファイルを閉じる
     fclose(fp);
@@ -149,7 +150,7 @@ int writeDataHeader(char* fileName, double* field, int numX, int numY, char* hea
 // データを書き込む
 // arrayNx, arrayNy : 
 // nx, ny : number of cells in the computational domain.
-int writeData(double* field, int numX, int numY, const char* caseName, int timeStep, char* fieldName, int nx, int ny)
+int writeData(double* field, int numX, int numY, const char* caseName, int timeStep, char* fieldName, int nx, int ny, int writePrec)
 {
     char fileName[1024];
     char cTimeStep[128]; // store time as string
@@ -182,7 +183,7 @@ int writeData(double* field, int numX, int numY, const char* caseName, int timeS
     {
         for(int ii=0; ii<numX; ii++)
         {
-            fprintf(fp,"%.8e ",field[ii + jj*numX]);
+            fprintf(fp,"%.*lf ",writePrec,field[ii + jj*numX]); // writePrec: number of digits to write, field: data to write
             // printf("%d %d %lf\n",ii,jj,field[ii + jj*numX]);
         }
         fprintf(fp, "\n");
