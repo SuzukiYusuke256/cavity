@@ -1,3 +1,5 @@
+#include "myConst.h"
+
 // define constant 
 const int CFG_NUM = 10;
 

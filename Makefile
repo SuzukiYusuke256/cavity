@@ -11,7 +11,7 @@ CFLAGS = -O2
 TARGET = cavity
 
 # ソースファイル
-SRCS = cavity.c myIO.c
+SRCS = cavity.c myIO.c myConst.c
 
 # オブジェクトファイル
 OBJS = $(SRCS:.c=.o)
@@ -25,6 +25,14 @@ postProcess: myPostProcess.o myIO.o myConst.o
 
 # test
 test: test.o myIO.o myConst.o
+	$(CC) $(CFLAGS) -o $@ $^
+
+# couette
+couette: cavity.o myIO.o myConst.o
+	$(CC) $(CFLAGS) -o $@ $^
+
+# poiseuille
+poi: cavity.o myIO.o myConst.o
 	$(CC) $(CFLAGS) -o $@ $^
 
 # 実行ファイルの生成ルール

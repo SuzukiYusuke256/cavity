@@ -6,7 +6,7 @@
 #include <time.h>
 
 #include "myIO.h"
-#include "myConst.c"
+#include "myConst.h"
 #include "config.h"
 
 // define functions
@@ -61,22 +61,31 @@ int main(int argc, char* argv[])
 
     // boundary conditions
     // couette flow 
-    const int uBC[4] = {0,0,1,1}; // uの境界条件タイプ 上下左右の順 0: Dirichlet 1: Neumann
-    const int vBC[4] = {0,0,1,1}; // vの境界条件タイプ 上下左右の順 0: Dirichlet 1: Neumann
-    const int pBC[4] = {1,1,1,1}; // pの境界条件タイプ 上下左右の順 0: Dirichlet 1: Neumann
-
-    const double uBCVal[4] = {1.0, 0.0, 0.0, 0.0}; // uの境界条件値 上下左右の順
-    const double vBCVal[4] = {0.0, 0.0, 0.0, 0.0}; // vの境界条件値 上下左右の順
-    const double pBCVal[4] = {0.0, 0.0, 0.0, 0.0}; // pの境界条件値 上下左右の順
-
-    // cavity flow 
-    // const int uBC[4] = {0,0,0,0}; // uの境界条件タイプ 上下左右の順 0: Dirichlet 1: Neumann
-    // const int vBC[4] = {0,0,0,0}; // vの境界条件タイプ 上下左右の順 0: Dirichlet 1: Neumann
+    // const int uBC[4] = {0,0,1,1}; // uの境界条件タイプ 上下左右の順 0: Dirichlet 1: Neumann
+    // const int vBC[4] = {0,0,1,1}; // vの境界条件タイプ 上下左右の順 0: Dirichlet 1: Neumann
     // const int pBC[4] = {1,1,1,1}; // pの境界条件タイプ 上下左右の順 0: Dirichlet 1: Neumann
 
     // const double uBCVal[4] = {1.0, 0.0, 0.0, 0.0}; // uの境界条件値 上下左右の順
     // const double vBCVal[4] = {0.0, 0.0, 0.0, 0.0}; // vの境界条件値 上下左右の順
     // const double pBCVal[4] = {0.0, 0.0, 0.0, 0.0}; // pの境界条件値 上下左右の順
+
+    // 2D poiseuille flow
+    // const int uBC[4] = {0,0,1,1}; // uの境界条件タイプ 上下左右の順 0: Dirichlet 1: Neumann
+    // const int vBC[4] = {0,0,1,1}; // vの境界条件タイプ 上下左右の順 0: Dirichlet 1: Neumann
+    // const int pBC[4] = {1,1,1,1}; // pの境界条件タイプ 上下左右の順 0: Dirichlet 1: Neumann
+
+    // const double uBCVal[4] = {0.0, 0.0, 0.0, 0.0}; // uの境界条件値 上下左右の順
+    // const double vBCVal[4] = {0.0, 0.0, 0.0, 0.0}; // vの境界条件値 上下左右の順
+    // const double pBCVal[4] = {0.0, 0.0, -1.0, -1.0}; // pの境界条件値 上下左右の順
+
+    // cavity flow 
+    const int uBC[4] = {0,0,0,0}; // uの境界条件タイプ 上下左右の順 0: Dirichlet 1: Neumann
+    const int vBC[4] = {0,0,0,0}; // vの境界条件タイプ 上下左右の順 0: Dirichlet 1: Neumann
+    const int pBC[4] = {1,1,1,1}; // pの境界条件タイプ 上下左右の順 0: Dirichlet 1: Neumann
+
+    const double uBCVal[4] = {1.0, 0.0, 0.0, 0.0}; // uの境界条件値 上下左右の順
+    const double vBCVal[4] = {0.0, 0.0, 0.0, 0.0}; // vの境界条件値 上下左右の順
+    const double pBCVal[4] = {0.0, 0.0, 0.0, 0.0}; // pの境界条件値 上下左右の順
     
     // output file name
     char logFileName[100] = "log"; // default 
@@ -392,45 +401,6 @@ void correctBoundaryConditions(double* u, double* v, double* p, const int* uBC, 
         }
     }
 
-    // for(int i=1; i<xn+1; i++)
-    // {
-    //     // 壁面速度による境界条件
-    //     v[i + 1 * (xn+2)] = 0;
-    //     v[i + (yn+1) * (xn+2)] = 0;
-
-    //     // 連続の式による境界条件
-    //     v[i + 0 * (xn+2)] = v[i + 2 * (xn+2)]; 
-    //     v[i + (yn+2) * (xn+2)] = v[i + yn * (xn+2)];
-    // }
-
-    // // 左右面
-    // for(int j=1; j<yn+2; j++)
-    // {
-    //     // 壁面速度による境界条件
-    //     v[0 + j * (xn+2)] = 2.0 * 0 - v[1 + j * (xn+2)]; // すべりなし
-    //     v[(xn+1) + j * (xn+2)] = 2.0 * 0 - v[xn + j * (xn+2)]; // すべりなし
-    // }
-
-    // for(int i=1; i<xn+2; i++)
-    // {
-    //     // top wall
-    //     u[i + (yn+1) * (xn+3)] = 2.0 * uWall - u[i + yn * (xn+3)];
-
-    //     // bottom wall
-    //     u[i + 0 * (xn+3)] = 2.0 * 0 - u[i + 1 * (xn+3)]; // すべりなし
-    // }
-    // for(int j=1; j<xn+1; j++)
-    // {
-    //     // 壁面速度による境界条件
-    //     u[1 + j * (xn+3)] = 0; // すべりなし
-    //     u[(xn+1) + j * (xn+3)] = 0; // すべりなし
-    
-    //     // 連続の式による境界条件
-    //     u[0 + j * (xn+3)] = u[2 + j * (xn+3)];
-    //     u[(xn+2) + j * (xn+3)] = u[xn + j * (xn+3)];
-    // }
-
-
     // pressure boundary conditions
     // top
     if (pBC[0] == 0) // dirichlet condition
@@ -495,20 +465,6 @@ void correctBoundaryConditions(double* u, double* v, double* p, const int* uBC, 
             p[(xn+1) + j * (xn+2)] = p[xn + j * (xn+2)] + pBCVal[3] * dx; // gradient perpendicular to the wall is specified.
         }
     }
-
-    // 壁面での勾配0
-    // 上下面
-    // for(int i=0; i<xn+2; i++)
-    // {
-    //     p[i + 0*(xn+2)] = p[i + 1*(xn+2)];
-    //     p[i + (yn+1)*(xn+2)] = p[i + yn*(xn+2)];
-    // }
-    // //左右面
-    // for(int j=0; j<yn+2; j++)
-    // {
-    //     p[0 + j * (xn+2)] = p[1 + j * (xn+2)];
-    //     p[(xn+1) + j * (xn+2)] = p[xn + j * (xn+2)];
-    // }
 }
 
 void predictVelocity(double* u, double* v, double* p, double* du, double* dv, double* dp, double Re, double dx, double dy, double dt, int xn, int yn)

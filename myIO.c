@@ -8,6 +8,7 @@
 
 #include "myIO.h"
 #include "myConst.h"
+#include "config.h"
 
 int readConfig(char* configName, Config* config)
 {
