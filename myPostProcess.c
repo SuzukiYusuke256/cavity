@@ -142,8 +142,8 @@ int main(int argc, char* argv[])
     writeData(dissip,  nx,  ny,  caseName,timeStep,"viscousDissipation",nx,ny,writePrec);
     writeData(wallWork,1,   nx,  caseName,timeStep,"wallWork",          nx,ny,writePrec); // writing in y direction
 
-    printf("Total viscous dissipation: %lf\n", totalDissip);
-    printf("Total wall work: %lf\n", totalWallWork);
+    printf("Total viscous dissipation: %.*e\n", writePrec, totalDissip);
+    printf("Total wall work: %.*e\n", writePrec, totalWallWork);
     // writeData(totalDissip, 1,1,  caseName,0,"totalViscousDissip",nx,ny);
     
     // Free memory
