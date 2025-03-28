@@ -9,10 +9,9 @@
 #include "myIO.h"
 #include "myPostProcess.h"
 
-void print_usage(const char* programName);
-
 int main(int argc, char* argv[])
 {
+    // Check command line arguments
     int opt;
     char *caseName = NULL;
     char *timeStepName = NULL;
@@ -94,23 +93,31 @@ int main(int argc, char* argv[])
 
     const int nx = cfg.nx;
     const int ny = cfg.ny;
+    const double Re = cfg.re;
     const int writePrec = cfg.writePrecision; // precision for output data
 
+    const double dx = 1.0 / (double)nx;
+    const double dy = 1.0 / (double)ny;
     const double rdx = (double)nx; // 0.25 dx = 1/xn. rdx = 1/(1/xn) = xn;
     const double rdy = (double)ny;
 
-    double* u          = (double*)calloc((nx+3)*(ny+2), sizeof(double));
-    double* v          = (double*)calloc((nx+2)*(ny+3), sizeof(double));
-    double* uCenter    = (double*)calloc((nx+2)*(ny+2), sizeof(double));
-    double* vCenter    = (double*)calloc((nx+2)*(ny+2), sizeof(double));
-    double* dudx       = (double*)calloc(nx*ny, sizeof(double));
-    double* dudy       = (double*)calloc(nx*ny, sizeof(double));
-    double* dvdx       = (double*)calloc(nx*ny, sizeof(double));
-    double* dvdy       = (double*)calloc(nx*ny, sizeof(double));
-    double* wallDudy   = (double*)calloc(nx, sizeof(double));
+    const double nu = 1.0 / Re; // kinematic viscosity
+    
 
-    double* dissip     = (double*)calloc(nx*ny, sizeof(double));
-    double totalDissip = 0.0;
+    double* u            = (double*)calloc((nx+3)*(ny+2), sizeof(double));
+    double* v            = (double*)calloc((nx+2)*(ny+3), sizeof(double));
+    double* uCenter      = (double*)calloc((nx+2)*(ny+2), sizeof(double));
+    double* vCenter      = (double*)calloc((nx+2)*(ny+2), sizeof(double));
+    double* dudx         = (double*)calloc(nx*ny, sizeof(double));
+    double* dudy         = (double*)calloc(nx*ny, sizeof(double));
+    double* dvdx         = (double*)calloc(nx*ny, sizeof(double));
+    double* dvdy         = (double*)calloc(nx*ny, sizeof(double));
+    double* wallDudy     = (double*)calloc(nx, sizeof(double));
+
+    double* dissip       = (double*)calloc(nx*ny, sizeof(double));
+    double* wallWork     = (double*)calloc(nx, sizeof(double));
+    double totalDissip   = 0.0;
+    double totalWallWork = 0.0;
 
     readData(u,nx+3,ny+2,caseName,timeStep,"U");
     readData(v,nx+2,ny+3,caseName,timeStep,"V");
@@ -122,7 +129,8 @@ int main(int argc, char* argv[])
     // Calculate velocity gradients at cell centers
     calcCellCenterVelocityGradients(uCenter, vCenter, dudx, dudy, dvdx, dvdy, nx, ny, rdx, rdy);
     calcSurfaceVelocityGradients(uCenter,vCenter,wallDudy,nx,ny,rdx,rdy);
-    calcViscousDissipation(0.01, dudx, dudy, dvdx, dvdy, dissip, &totalDissip, nx, ny);
+    calcViscousDissipation(nu, dudx, dudy, dvdx, dvdy, nx, ny, dx, dy, dissip, &totalDissip);
+    calcWallWork(nu, wallDudy, nx, ny, dx, dy, wallWork, &totalWallWork);
 
     writeData(uCenter, nx+2,ny+2,caseName,timeStep,"vU",                nx,ny,writePrec); // U at the cell center
     writeData(vCenter, nx+2,ny+2,caseName,timeStep,"vV",                nx,ny,writePrec); // V at the cell center
@@ -132,10 +140,11 @@ int main(int argc, char* argv[])
     writeData(dvdy,    nx,  ny,  caseName,timeStep,"vDVdy",             nx,ny,writePrec);
     writeData(wallDudy,nx,  1,   caseName,timeStep,"sDUdy",             nx,ny,writePrec);
     writeData(dissip,  nx,  ny,  caseName,timeStep,"viscousDissipation",nx,ny,writePrec);
+    writeData(wallWork,1,   nx,  caseName,timeStep,"wallWork",          nx,ny,writePrec); // writing in y direction
 
     printf("Total viscous dissipation: %lf\n", totalDissip);
+    printf("Total wall work: %lf\n", totalWallWork);
     // writeData(totalDissip, 1,1,  caseName,0,"totalViscousDissip",nx,ny);
-    
     
     // Free memory
     free(dudx);
@@ -339,7 +348,7 @@ int calcStaggeredToCellCenterVelocityGradients(double* u, double* v,
  * @param ny          number of cells in y-direction
  * @return            0 on success, -1 on failure
  */
-int calcViscousDissipation(double nu, double* dudx, double* dudy, double* dvdx, double* dvdy, double* dissip, double* totalDissip, int nx, int ny) {
+int calcViscousDissipation(double nu, double* dudx, double* dudy, double* dvdx, double* dvdy, int nx, int ny, double dx, double dy, double* dissip, double* totalDissip) {
 
     if (dudx == NULL || dudy == NULL || dvdx == NULL || dvdy == NULL || dissip == NULL) {
         fprintf(stderr, "Error: Null pointer provided to calcViscousDissipation\n");
@@ -347,7 +356,7 @@ int calcViscousDissipation(double nu, double* dudx, double* dudy, double* dvdx, 
     }
 
     // Volume of each cell
-    double dV = 1.0 / (double)(nx*ny); 
+    double dV = dx * dy; 
 
     printf("dV: %lf\n",dV);
 
@@ -376,6 +385,29 @@ int calcViscousDissipation(double nu, double* dudx, double* dudy, double* dvdx, 
     }
 
 return 0;
+}
+
+int calcWallWork(double nu, double* wallDudy, int xn, int yn, double dx, double dy, double* wallWork, double* totalWallWork)
+{
+    if (wallDudy == NULL || wallWork == NULL) 
+    {
+        fprintf(stderr, "Error: Null pointer provided to calcWallWork\n");
+        return -1;
+    }
+
+    // temporary variable for total wall work
+    double tmp = 0.0;
+
+    // Calculate wall work for each cell
+    for (int ii = 0; ii < xn; ii++) 
+    {
+        wallWork[ii] = nu * wallDudy[ii] * dx;
+        tmp += wallWork[ii];
+    }
+
+    *totalWallWork = tmp;
+
+    return 0;
 }
 
 void print_usage(const char* programName) {

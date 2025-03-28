@@ -25,6 +25,11 @@ int calcStaggeredToCellCenterVelocityGradients(double* u, double* v,
                                               int xn, int yn, double rdx, double rdy);
 
 // Function to calculate viscous dissipation at cell centers.
-int calcViscousDissipation(double nu, double* dudx, double* dudy, double* dvdx, double* dvdy, double* dissip, double* totalDissip, int xn, int yn);
+int calcViscousDissipation(double nu, double* dudx, double* dudy, double* dvdx, double* dvdy, int xn, int yn, double dx, double dy, double* dissip, double* totalDissip);
+
+// Function to calculate wall work
+int calcWallWork(double nu, double* wallDudy, int xn, int yn, double dx, double dy, double* wallWork, double* totalWallWork);
+
+void print_usage(const char* programName);
 
 #endif
