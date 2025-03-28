@@ -6,6 +6,9 @@
 #include <sys/types.h>
 #include <errno.h>
 
+#include <dirent.h>
+#include <ctype.h> // for isdigit
+
 #include "myIO.h"
 #include "myConst.h"
 #include "config.h"
@@ -184,7 +187,7 @@ int writeData(double* field, int numX, int numY, const char* caseName, int timeS
     {
         for(int ii=0; ii<numX; ii++)
         {
-            fprintf(fp,"%.*lf ",writePrec,field[ii + jj*numX]); // writePrec: number of digits to write, field: data to write
+            fprintf(fp,"%.*e ",writePrec,field[ii + jj*numX]); // writePrec: number of digits to write, field: data to write
             // printf("%d %d %lf\n",ii,jj,field[ii + jj*numX]);
         }
         fprintf(fp, "\n");
@@ -229,4 +232,72 @@ int createDirectoryIfNotExists(const char* dirPath) {
     
     printf("Created directory '%s'\n", dirPath);
     return 0;
+}
+
+
+/**
+ * Retrieves a list of directories with numeric names within a specified case directory.
+ * Converts directory names to double values and finds the maximum value.
+ * 
+ * @param caseDirPath       Path to the case directory
+ * @param dirList           Array to store the numeric directory names as double values (must be pre-allocated)
+ * @param maxDirs           Maximum number of directories to store in dirList
+ * @param maxValue          Pointer to store the maximum numeric value found
+ * @return Number of numeric directories found, or -1 on error
+ */
+int getNumericDirectories(const char* caseDirPath, double dirList[], int maxDirs, double* maxValue) 
+{
+    DIR* dir;
+    struct dirent* entry;
+    int count = 0;
+    int tmpMaxValue = -1.0; // Initialize to a negative value to ensure any positive value will be greater
+
+    // Open the directory
+    dir = opendir(caseDirPath);
+    if (dir == NULL) 
+    {
+        fprintf(stderr, "Error: Failed to open directory '%s'\n", caseDirPath);
+        return -1;
+    }
+
+    // Iterate through directory entries
+    while ((entry = readdir(dir)) != NULL) 
+    {
+        // Skip "." and ".."
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) 
+        {
+            continue;
+        }
+
+        // Check if the name is numeric
+        int isNumeric = 1;
+        for (int i = 0; entry->d_name[i] != '\0'; i++) 
+        {
+            if (!isdigit(entry->d_name[i]) && entry->d_name[i] != '.') 
+            {
+                isNumeric = 0;
+                break;
+            }
+        }
+
+        // If numeric, convert to double and add to the list
+        if (isNumeric && count < maxDirs) 
+        {
+            double value = atof(entry->d_name);
+            dirList[count] = value;
+
+            // Check if this is the maximum value so far
+            if (value > tmpMaxValue) 
+            {
+                tmpMaxValue = value;
+            }
+            count++;
+        }
+    }
+
+    // Set the maximum value and its corresponding directory name
+    *maxValue = tmpMaxValue;
+
+    closedir(dir);
+    return count;
 }

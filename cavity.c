@@ -1,4 +1,4 @@
-// cavity flow solver using MAC method
+// cavity flow solver using SMAC method
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -57,9 +57,10 @@ int main(int argc, char* argv[])
     const int logOutputInterval = outputInterval/10; // ログの出力間隔
 
     // 圧力の基準セル．この格子点の圧力を0とする．
-    const int pRefID            = 1*(xn+2) + 1; // i = 1, j = 1 (0始まり)  
+    const int pRefID = 1*(xn+2) + 1; // i = 1, j = 1 (0始まり)  
 
-    // boundary conditions
+    // boundary conditions /////////////////////////////////////////////////
+
     // couette flow 
     // const int uBC[4] = {0,0,1,1}; // uの境界条件タイプ 上下左右の順 0: Dirichlet 1: Neumann
     // const int vBC[4] = {0,0,1,1}; // vの境界条件タイプ 上下左右の順 0: Dirichlet 1: Neumann

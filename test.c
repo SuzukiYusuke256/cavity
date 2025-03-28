@@ -1,29 +1,20 @@
 #include "stdio.h"
 
 #include "myConst.h"
-// #include "config.h"
+#include "config.h"
 #include "myIO.h"
 
 int main()
 {
-    const char* caseName = "test_01";
-    
-    Config cfg;
-    char cfgName[128] = "";
-    strcpy(cfgName,caseName); // cfgName = caseName
-    strcat(cfgName,"/config"); // cfgName = caseName/config
+    const char* caseDirPath = "cavity_smac_01";
+    double dirList[1000] = {0};
+    int maxDirs = 1000;
+    double maxValue = 0.0;
 
-    readConfig(cfgName,&cfg);
+    const int count = getNumericDirectories(caseDirPath, dirList, maxDirs, &maxValue);
 
-    const int nx = cfg.nx;
-    const int ny = cfg.ny;
-
-    double* u = (double*)calloc((nx+3)*(ny+2), sizeof(double));
-
-    readData(u,nx+3,ny+2,caseName,0,"U");
-
-    printf("%lf\n", u[1 + 3*(nx+3)]);
-
+    printf("Number of numeric directories: %d\n", count);
+    printf("Max number: %lf\n", maxValue);
 
     return 0;
 }

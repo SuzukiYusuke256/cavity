@@ -13,5 +13,6 @@ int write(char* filename, int dataNum, int num, char** headings, ...);
 
 // directories
 int createDirectoryIfNotExists(const char* dirPath);
+int getNumericDirectories(const char* caseDirPath, double dirList[], int maxDirs, double* maxValue);
 
 #endif

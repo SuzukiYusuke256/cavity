@@ -2,20 +2,74 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <getopt.h>
 
 #include "myConst.h"
 #include "config.h"
 #include "myIO.h"
 #include "myPostProcess.h"
 
-// calculate gradient
-int main()
-{
-    // const char* caseName = "cavity_smac_01-2";
-    // int timeStep         = 0;
+void print_usage(const char* programName);
 
-    const char* caseName = "test_02";
-    int timeStep         = 0;
+int main(int argc, char* argv[])
+{
+    int opt;
+    char *caseName = NULL;
+    char *timeStepName = NULL;
+    int isAllTimeSteps = 0;
+    
+    // Process command line arguments
+    while ((opt = getopt(argc, argv, "c:t:ah")) != -1) {
+        switch (opt) {
+            case 'c':
+                caseName = optarg;
+                break;
+            case 't':
+                timeStepName = optarg;
+                
+                break;
+            case 'a':
+                isAllTimeSteps = 1;
+                break;
+            case 'h':
+                print_usage(argv[0]);
+                return 0;
+            case '?':
+                // getopt automatically prints error message
+                print_usage(argv[0]);
+                return 1;
+            default:
+                break;
+        }
+    }
+    
+    // Check for required arguments
+
+    // Check if case name is provided
+    if (caseName == NULL) {
+        fprintf(stderr, "Error: Case name (-c) is required\n");
+        return 1;
+    }
+    
+    // Check if either time step or all time steps is specified
+    if (timeStepName == NULL && !isAllTimeSteps) {
+        fprintf(stderr, "Error: Either time step (-t) or all time steps (-a) must be specified\n");
+        return 1;
+    }
+    
+    // Check if both time step and all time steps are specified
+    if (timeStepName != NULL && isAllTimeSteps) {
+        fprintf(stderr, "Error: Options -t and -a cannot be used together\n");
+        return 1;
+    }
+
+    // Main program logic ///////////////////////////////////////////////////
+
+    const int timeStep   = atoi(timeStepName);
+
+    printf("Case name: %s\n", caseName);
+    printf("Time step: %d\n", timeStep);
+
     
     // read config
     Config cfg;
@@ -34,6 +88,7 @@ int main()
 
     const int nx = cfg.nx;
     const int ny = cfg.ny;
+    const int writePrec = cfg.writePrecision; // precision for output data
 
     const double rdx = (double)nx; // 0.25 dx = 1/xn. rdx = 1/(1/xn) = xn;
     const double rdy = (double)ny;
@@ -57,19 +112,20 @@ int main()
     // Calculate velocities at cell centers
     calcCellCenterVelocity(u, v, uCenter, vCenter, nx, ny);
 
+
     // Calculate velocity gradients at cell centers
     calcCellCenterVelocityGradients(uCenter, vCenter, dudx, dudy, dvdx, dvdy, nx, ny, rdx, rdy);
     calcSurfaceVelocityGradients(uCenter,vCenter,wallDudy,nx,ny,rdx,rdy);
     calcViscousDissipation(0.01, dudx, dudy, dvdx, dvdy, dissip, &totalDissip, nx, ny);
 
-    writeData(uCenter, nx+2,ny+2,caseName,timeStep,"vU",           nx,ny); // U at the cell center
-    writeData(vCenter, nx+2,ny+2,caseName,timeStep,"vV",           nx,ny); // V at the cell center
-    writeData(dudx,    nx,  ny,  caseName,timeStep,"vDUdx",        nx,ny);
-    writeData(dudy,    nx,  ny,  caseName,timeStep,"vDUdy",        nx,ny);
-    writeData(dvdx,    nx,  ny,  caseName,timeStep,"vDVdx",        nx,ny);
-    writeData(dvdy,    nx,  ny,  caseName,timeStep,"vDVdy",        nx,ny);
-    writeData(wallDudy,nx,  1,   caseName,timeStep,"sDUdy",        nx,ny);
-    writeData(dissip,  nx,  ny,  caseName,timeStep,"viscousDissip",nx,ny);
+    writeData(uCenter, nx+2,ny+2,caseName,timeStep,"vU",                nx,ny,writePrec); // U at the cell center
+    writeData(vCenter, nx+2,ny+2,caseName,timeStep,"vV",                nx,ny,writePrec); // V at the cell center
+    writeData(dudx,    nx,  ny,  caseName,timeStep,"vDUdx",             nx,ny,writePrec);
+    writeData(dudy,    nx,  ny,  caseName,timeStep,"vDUdy",             nx,ny,writePrec);
+    writeData(dvdx,    nx,  ny,  caseName,timeStep,"vDVdx",             nx,ny,writePrec);
+    writeData(dvdy,    nx,  ny,  caseName,timeStep,"vDVdy",             nx,ny,writePrec);
+    writeData(wallDudy,nx,  1,   caseName,timeStep,"sDUdy",             nx,ny,writePrec);
+    writeData(dissip,  nx,  ny,  caseName,timeStep,"viscousDissipation",nx,ny,writePrec);
 
     printf("Total viscous dissipation: %lf\n", totalDissip);
     // writeData(totalDissip, 1,1,  caseName,0,"totalViscousDissip",nx,ny);
@@ -314,4 +370,15 @@ int calcViscousDissipation(double nu, double* dudx, double* dudy, double* dvdx, 
     }
 
 return 0;
+}
+
+void print_usage(const char* programName) {
+    printf("Usage: %s [options]\n", programName);
+    printf("Options:\n");
+    printf("  -c <caseName>  Specify case name (required)\n");
+    printf("  -t <timeStep>  Process specific time step only\n");
+    printf("  -a             Process all time steps\n");
+    printf("  -h             Display this help message\n");
+    printf("\n");
+    printf("Note: Either -t or -a must be specified\n");
 }

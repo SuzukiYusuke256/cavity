@@ -7,3 +7,4 @@ Ny                      16
 Re                      100
 withInitialCondition    0
 covergenceThreshold     1e-16
+writePrecision          16
