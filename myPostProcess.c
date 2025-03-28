@@ -44,22 +44,28 @@ int main(int argc, char* argv[])
     }
     
     // Check for required arguments
+    int isError = 0;
 
     // Check if case name is provided
     if (caseName == NULL) {
         fprintf(stderr, "Error: Case name (-c) is required\n");
-        return 1;
+        isError = 1;
     }
     
     // Check if either time step or all time steps is specified
     if (timeStepName == NULL && !isAllTimeSteps) {
         fprintf(stderr, "Error: Either time step (-t) or all time steps (-a) must be specified\n");
-        return 1;
+        isError = 1;
     }
     
     // Check if both time step and all time steps are specified
     if (timeStepName != NULL && isAllTimeSteps) {
         fprintf(stderr, "Error: Options -t and -a cannot be used together\n");
+        isError = 1;
+    }
+
+    if (isError) {
+        print_usage(argv[0]);
         return 1;
     }
 
