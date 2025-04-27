@@ -72,8 +72,8 @@ int main(int argc, char* argv[])
 
     const int timeStep   = atoi(timeStepName);
 
-    printf("Case name: %s\n", caseName);
-    printf("Time step: %d\n", timeStep);
+    // printf("Case name: %s\n", caseName);
+    // printf("Time step: %d\n", timeStep);
 
     
     // read config
@@ -102,7 +102,6 @@ int main(int argc, char* argv[])
     const double rdy = (double)ny;
 
     const double nu = 1.0 / Re; // kinematic viscosity
-    
 
     double* u            = (double*)calloc((nx+3)*(ny+2), sizeof(double));
     double* v            = (double*)calloc((nx+2)*(ny+3), sizeof(double));
@@ -113,6 +112,9 @@ int main(int argc, char* argv[])
     double* dvdx         = (double*)calloc(nx*ny, sizeof(double));
     double* dvdy         = (double*)calloc(nx*ny, sizeof(double));
     double* wallDudy     = (double*)calloc(nx, sizeof(double));
+
+    double* massBalance  = (double*)calloc(nx*ny, sizeof(double));
+    double totalMassBalance = 0.0; // total mass balance
 
     double* dissip       = (double*)calloc(nx*ny, sizeof(double));
     double* ke           = (double*)calloc(nx*ny, sizeof(double));
@@ -128,11 +130,14 @@ int main(int argc, char* argv[])
     // Calculate velocities at cell centers
     calcCellCenterVelocity(u, v, uCenter, vCenter, nx, ny);
 
-
     // Calculate velocity gradients at cell centers
     calcCellCenterVelocityGradients(uCenter, vCenter, dudx, dudy, dvdx, dvdy, nx, ny, rdx, rdy);
     calcSurfaceVelocityGradients(uCenter,vCenter,wallDudy,nx,ny,rdx,rdy);
 
+    // mass
+    calcMassBalance(dudx,dvdy, nx, ny, dx, dy, massBalance, &totalMassBalance);
+
+    // energy 
     calcViscousDissipation(nu, dudx, dudy, dvdx, dvdy, nx, ny, dx, dy, dissip, &totalDissip);
     calcWallWork(nu, wallDudy, nx, ny, dx, dy, wallWork, &totalWallWork);
     calcKineticEnergy(uCenter,vCenter,nx,ny,dx,dy,ke,&totalKe);
@@ -144,12 +149,17 @@ int main(int argc, char* argv[])
     writeData(dvdx,    nx,  ny,  caseName,timeStep,"vDVdx",             nx,ny,writePrec);
     writeData(dvdy,    nx,  ny,  caseName,timeStep,"vDVdy",             nx,ny,writePrec);
     writeData(wallDudy,nx,  1,   caseName,timeStep,"sDUdy",             nx,ny,writePrec);
+    writeData(massBalance,nx,ny, caseName,timeStep,"mass",              nx,ny,writePrec);
     writeData(dissip,  nx,  ny,  caseName,timeStep,"viscousDissipation",nx,ny,writePrec);
     writeData(ke,      nx,  ny,  caseName,timeStep,"kineticEnergy",     nx,ny,writePrec);
     writeData(wallWork,1,   nx,  caseName,timeStep,"wallWork",          nx,ny,writePrec); // writing in y direction
 
-    printf("Total viscous dissipation: %.*e\n", writePrec, totalDissip);
-    printf("Total wall work: %.*e\n", writePrec, totalWallWork);
+    // printf("Total viscous dissipation: %.*e\n", writePrec, totalDissip);
+    // printf("Total wall work: %.*e\n", writePrec, totalWallWork);
+    // printf("Total kinetic energy: %.*e\n", writePrec, totalKe);
+
+    printf("%d\t%.*e\t%.*e\t%.*e\t%.*e\n", 
+            timeStep, writePrec, totalKe, writePrec, totalDissip, writePrec, totalWallWork, writePrec, totalMassBalance);
     // writeData(totalDissip, 1,1,  caseName,0,"totalViscousDissip",nx,ny);
     
     // Free memory
@@ -162,6 +172,9 @@ int main(int argc, char* argv[])
     free(uCenter);
     free(vCenter);
     free(wallDudy);
+
+    free(massBalance);
+
     free(dissip);
     free(ke);
     free(wallWork);
@@ -342,6 +355,33 @@ int calcStaggeredToCellCenterVelocityGradients(double* u, double* v,
     return 0;
 }
 
+int calcMassBalance(double* dudx, double* dvdy, int nx, int ny, double dx, double dy, double* massBalance, double* totalMassBalance)
+{
+    if (dudx == NULL || dvdy == NULL || massBalance == NULL) {
+        fprintf(stderr, "Error: Null pointer provided to calcMassBalance\n");
+        return -1;
+    }
+
+    // Initialize total mass balance
+    double tmp = 0.0;
+
+    // Calculate mass balance for each cell
+    for (int jj = 0; jj < ny; jj++) {
+        for (int ii = 0; ii < nx; ii++) {
+
+            int idx = ii + jj*nx;
+
+            // Calculate mass balance using continuity equation
+            massBalance[idx] = dudx[idx] + dvdy[idx];
+            tmp += massBalance[idx];
+        }
+    }
+
+    *totalMassBalance = tmp;
+
+    return 0;
+}
+
 /**
  * Function to calculate viscous dissipation at cell centers
  * 
@@ -366,7 +406,7 @@ int calcViscousDissipation(double nu, double* dudx, double* dudy, double* dvdx, 
     // Volume of each cell
     double dV = dx * dy; 
 
-    printf("dV: %lf\n",dV);
+    // printf("dV: %lf\n",dV);
 
     // Initialize total dissipation
     *totalDissip = 0.0;
@@ -429,7 +469,7 @@ int calcKineticEnergy(double* u, double* v, int nx, int ny, double dx, double dy
     // Volume of each cell
     double dV = dx * dy; 
 
-    printf("dV: %lf\n",dV);
+    // printf("dV: %lf\n",dV);
 
     // Initialize total dissipation
     *totalKe = 0.0;

@@ -33,6 +33,8 @@ int calcWallWork(double nu, double* wallDudy, int xn, int yn, double dx, double 
 // Function to calculate kinetic energy
 int calcKineticEnergy(double* u, double* v, int xn, int yn, double dx, double dy, double* ke, double* totalKe);
 
+int calcMassBalance(double* dudx, double* dvdy, int nx, int ny, double dx, double dy, double* massBalance, double* totalMassBalance);
+
 void print_usage(const char* programName);
 
 #endif
