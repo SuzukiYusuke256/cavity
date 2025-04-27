@@ -115,9 +115,12 @@ int main(int argc, char* argv[])
     double* wallDudy     = (double*)calloc(nx, sizeof(double));
 
     double* dissip       = (double*)calloc(nx*ny, sizeof(double));
+    double* ke           = (double*)calloc(nx*ny, sizeof(double));
     double* wallWork     = (double*)calloc(nx, sizeof(double));
+    double totalKe       = 0.0; // total kinetic energy
     double totalDissip   = 0.0;
     double totalWallWork = 0.0;
+
 
     readData(u,nx+3,ny+2,caseName,timeStep,"U");
     readData(v,nx+2,ny+3,caseName,timeStep,"V");
@@ -129,8 +132,10 @@ int main(int argc, char* argv[])
     // Calculate velocity gradients at cell centers
     calcCellCenterVelocityGradients(uCenter, vCenter, dudx, dudy, dvdx, dvdy, nx, ny, rdx, rdy);
     calcSurfaceVelocityGradients(uCenter,vCenter,wallDudy,nx,ny,rdx,rdy);
+
     calcViscousDissipation(nu, dudx, dudy, dvdx, dvdy, nx, ny, dx, dy, dissip, &totalDissip);
     calcWallWork(nu, wallDudy, nx, ny, dx, dy, wallWork, &totalWallWork);
+    calcKineticEnergy(uCenter,vCenter,nx,ny,dx,dy,ke,&totalKe);
 
     writeData(uCenter, nx+2,ny+2,caseName,timeStep,"vU",                nx,ny,writePrec); // U at the cell center
     writeData(vCenter, nx+2,ny+2,caseName,timeStep,"vV",                nx,ny,writePrec); // V at the cell center
@@ -140,6 +145,7 @@ int main(int argc, char* argv[])
     writeData(dvdy,    nx,  ny,  caseName,timeStep,"vDVdy",             nx,ny,writePrec);
     writeData(wallDudy,nx,  1,   caseName,timeStep,"sDUdy",             nx,ny,writePrec);
     writeData(dissip,  nx,  ny,  caseName,timeStep,"viscousDissipation",nx,ny,writePrec);
+    writeData(ke,      nx,  ny,  caseName,timeStep,"kineticEnergy",     nx,ny,writePrec);
     writeData(wallWork,1,   nx,  caseName,timeStep,"wallWork",          nx,ny,writePrec); // writing in y direction
 
     printf("Total viscous dissipation: %.*e\n", writePrec, totalDissip);
@@ -157,6 +163,8 @@ int main(int argc, char* argv[])
     free(vCenter);
     free(wallDudy);
     free(dissip);
+    free(ke);
+    free(wallWork);
     
     return 0;
 }
@@ -408,6 +416,39 @@ int calcWallWork(double nu, double* wallDudy, int xn, int yn, double dx, double 
     *totalWallWork = tmp;
 
     return 0;
+}
+
+// 
+int calcKineticEnergy(double* u, double* v, int nx, int ny, double dx, double dy, double* ke, double* totalKe)
+{
+    if (u == NULL || v == NULL || ke == NULL) {
+        fprintf(stderr, "Error: Null pointer provided to calcViscousDissipation\n");
+        return -1;
+    }
+
+    // Volume of each cell
+    double dV = dx * dy; 
+
+    printf("dV: %lf\n",dV);
+
+    // Initialize total dissipation
+    *totalKe = 0.0;
+
+    // Calculate viscous dissipation for each cell
+    for (int jj = 0; jj < ny; jj++) {
+        for (int ii = 0; ii < nx; ii++) {
+
+            int idx = ii + jj*nx;
+
+            // Calculate squared terms
+            double u2 = u[idx] * u[idx];  
+            double v2 = v[idx] * v[idx];  
+
+            // Calculate dissipation using simplified formula
+            ke[idx] = 0.5 * (u[idx] * u[idx] + v[idx] * v[idx]) * dV;
+            *totalKe += ke[idx];
+        }
+    }
 }
 
 void print_usage(const char* programName) {

@@ -30,6 +30,9 @@ int calcViscousDissipation(double nu, double* dudx, double* dudy, double* dvdx, 
 // Function to calculate wall work
 int calcWallWork(double nu, double* wallDudy, int xn, int yn, double dx, double dy, double* wallWork, double* totalWallWork);
 
+// Function to calculate kinetic energy
+int calcKineticEnergy(double* u, double* v, int xn, int yn, double dx, double dy, double* ke, double* totalKe);
+
 void print_usage(const char* programName);
 
 #endif
