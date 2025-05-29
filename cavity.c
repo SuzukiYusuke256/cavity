@@ -13,10 +13,10 @@
 void correctBoundaryConditions(double* u, double* v, double* p, const int* uBC, const int* vBC, const int* pBC, 
                                const double* uBCVal, const double* vBCVal, const double* pBCVal, int xn, int yn, double dx, double dy);
 void predictVelocity(double* u, double* v, double* p, double* du, double* dv, double* dp, double Re, double dx, double dy, double dt, int xn, int yn);
-void poissonPressure(double* u, double* v, double* p, double* du, double* dv, double* dp, double Re, double dx, double dy, double dt, int xn, int yn);
+void poissonPressure(double* u, double* v, double* p, double* du, double* dv, double* dp, int* itrNum, double Re, double dx, double dy, double dt, int xn, int yn);
 void correct(double* u, double* v, double* p, double* du, double* dv, double* dp, double dx, double dy, double dt, int xn, int yn, int pRefID);
 void writeAll(int timeStep, double* u, double* v, double* p, double* du, double* dv, double* dp, int xn, int yn, char* dataDirName);
-void writeLog(char* fileName, int timeStep, double dt, time_t elapsedTime, double* res, int resNum);
+void writeLog(char* fileName, int timeStep, double dt, time_t elapsedTime, double* res, int itrNum, int resNum);
 void calcResidual(double* field, int startIndexX, int startIndexY, int numX, int numY, int maxNumX, double* res, int resStartIndex);
 
 int main(int argc, char* argv[])
@@ -29,10 +29,13 @@ int main(int argc, char* argv[])
 
     // コマンドライン引数からcaseNameを取得
     const char* caseName = argv[1];
-    // const char* caseName = "test_03";
+    // const char* caseName = "test_01";
+
+    printf("%s\n", caseName);
     
     Config cfg;
     char cfgName[128] = "";
+
     strcpy(cfgName,caseName); // cfgName = caseName
     strcat(cfgName,"/config"); // cfgName = caseName/config
     readConfig(cfgName,&cfg);
@@ -43,6 +46,7 @@ int main(int argc, char* argv[])
         fprintf(stderr, "Error: caseName does not match cfg.caseName\n");
         return -1;
     }
+    
 
     const int stepNum           = cfg.stepNum;
     const int outputInterval    = cfg.outputInterval;
@@ -58,6 +62,7 @@ int main(int argc, char* argv[])
 
     // 圧力の基準セル．この格子点の圧力を0とする．
     const int pRefID = 1*(xn+2) + 1; // i = 1, j = 1 (0始まり)  
+
 
     // boundary conditions /////////////////////////////////////////////////
 
@@ -99,6 +104,9 @@ int main(int argc, char* argv[])
     // 計算時間 計測
     const time_t startTime = time(NULL); // プログラムの開始時間を取得
     time_t elapsedTime = time(NULL) - startTime; // 経過時間．ログに出力
+
+    // 反復回数
+    int itrNum = 0; // ポアソン方程式の反復回数
 
     double dx = 1.0 / (double)xn;
     double dy = 1.0 / (double)yn;
@@ -158,9 +166,11 @@ int main(int argc, char* argv[])
         // u,vに仮速度u*,v*が入る
         predictVelocity(u,v,p,du,dv,dp,Re,dx,dy,dt,xn,yn);
 
+        // printf("called\n");
+
         // 圧力ポアソン方程式を解く
         // 圧力修正子を計算
-        poissonPressure(u,v,p,du,dv,dp,Re,dx,dy,dt,xn,yn);
+        poissonPressure(u,v,p,du,dv,dp,&itrNum,Re,dx,dy,dt,xn,yn);
 
         // 速度，圧力の修正
         correct(u,v,p,du,dv,dp,dx,dy,dt,xn,yn,pRefID);
@@ -199,7 +209,7 @@ int main(int argc, char* argv[])
         {
             // ログに残差を出力
             elapsedTime = time(NULL) - startTime;
-            writeLog(logFileName,kk,dt,elapsedTime,residuals,6); 
+            writeLog(logFileName,kk,dt,elapsedTime,residuals,itrNum,6); 
         }
 
         // 残差を出力. 一定間隔かつ収束条件を満たしていない場合．
@@ -223,7 +233,7 @@ int main(int argc, char* argv[])
         {
             // ログに残差を出力
             elapsedTime = time(NULL) - startTime;
-            writeLog(logFileName,kk,dt,elapsedTime,residuals,6); 
+            writeLog(logFileName,kk,dt,elapsedTime,residuals,itrNum,6); 
             
             // output directory for computed data
             sprintf(timeDirName,"%s/%d",caseName,kk);
@@ -540,12 +550,13 @@ void predictVelocity(double* u, double* v, double* p, double* du, double* dv, do
 
 }
 
-void poissonPressure(double* u, double* v, double* p, double* du, double* dv, double* dp, double Re, double dx, double dy, double dt, int xn, int yn)
+void poissonPressure(double* u, double* v, double* p, double* du, double* dv, double* dp, int* itrNum, double Re, double dx, double dy, double dt, int xn, int yn)
 {
 
     // 圧力修正量の計算
     double prevdp;
     double err;
+    int itr = 0;
     int itrMax = 1000;
 
     // dpを初期化
@@ -557,7 +568,7 @@ void poissonPressure(double* u, double* v, double* p, double* du, double* dv, do
         }
     }
 
-    for (int itr=0; itr<itrMax; itr++)
+    for (itr=0; itr<itrMax; itr++)
     {
         // 圧力境界条件
         // 壁面での勾配0
@@ -594,6 +605,8 @@ void poissonPressure(double* u, double* v, double* p, double* du, double* dv, do
             break;
         }
     }
+
+    *itrNum = itr; // 収束した反復回数を返す
 }
 
 // 速度，圧力の修正
@@ -717,7 +730,7 @@ void writeAll(int timeStep, double* u, double* v, double* p, double* du, double*
 }
 
 // 残差などのログを出力する．
-void writeLog(char* fileName, int timeStep, double dt, time_t elapsedTime, double* res, int resNum)
+void writeLog(char* fileName, int timeStep, double dt, time_t elapsedTime, double* res, int itrNum, int resNum)
 {
     // ログファイルを開く
     FILE* outputLog = fopen(fileName,"a");
@@ -737,6 +750,9 @@ void writeLog(char* fileName, int timeStep, double dt, time_t elapsedTime, doubl
     {
         fprintf(outputLog," %.8e",res[i]);
     }
+
+    // 反復回数を書き込み
+    fprintf(outputLog," %d",itrNum);
 
     // 経過時間を書き込み
     fprintf(outputLog," %ld",elapsedTime);
